@@ -1,0 +1,11 @@
+GENE = "OPRM1"
+
+[IMPORT]
+DATA_DIR = "/mnt/project/misc_data/"
+MAPPING_FILE = "mappings_with_blocks.tsv"
+INTERVAL_FILE = "xgen_plus_spikein.b38.bed"
+VCF_DIR = "/mnt/project/Bulk/Exome sequences/Population level exome OQFE variants, pVCF format"
+TMP_DIR = "../tmp"
+LOG_DIR = "../hail_logs/"
+VCF_VERSION = "v1"
+DOWNSAMPLE_P = 0.005

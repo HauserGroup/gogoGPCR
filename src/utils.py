@@ -12,7 +12,7 @@ def get_position(gene: str, mapping: dict):
 
     return chromosome, blocks, start, end
 
-def lookup_vcfs(mapping: dict, vcfdir: Path, gene: str, version: str):
+def lookup_vcfs(mapping: dict, vcfdir: str, gene: str, version: str):
 
     chromosome, blocks, _, _ = get_position(gene, mapping)
 
