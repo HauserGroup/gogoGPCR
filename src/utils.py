@@ -19,12 +19,12 @@ def lookup_vcfs(mapping: dict, vcfdir: Path, gene: str, version: str):
     # Locate VCF file(s)
 
     vcf_files = [
-        f"{vcfdir}/ukb23156_c{chromosome}_b{block}_{version}.vcf.bgz"
+        f"file://{vcfdir}/ukb23156_c{chromosome}_b{block}_{version}.vcf.gz"
         for block in blocks
     ]
 
     tbi_files = [
-        f"{vcfdir}/ukb23156_c{chromosome}_b{block}_{version}.vcf.bgz.tbi"
+        f"file://{vcfdir}/ukb23156_c{chromosome}_b{block}_{version}.vcf.gz.tbi"
         for block in blocks
     ]
 
