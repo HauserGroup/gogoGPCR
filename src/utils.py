@@ -1,5 +1,7 @@
 import pandas as pd
 from pathlib import Path
+import hail as hl
+from typing import List
 
 def get_position(gene: str, mapping: dict):
 
@@ -29,3 +31,7 @@ def lookup_vcfs(mapping: dict, vcfdir: str, gene: str, version: str):
     ]
 
     return {"vcfs": vcf_files, "tbis": tbi_files}
+
+def are_variants_present(mt: hl.MatrixTable, var_col: str, variants: List[str]) -> None:
+    for v in variants:    
+        print(f"{v}: {mt.aggregate_rows(hl.agg.any(mt[var_col] == v))}")

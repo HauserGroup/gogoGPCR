@@ -1,4 +1,6 @@
 import hail as hl
+import src.annotations as annotations
+
 from pathlib import Path
 from typing import Optional, Union, List
 
@@ -39,12 +41,12 @@ def import_mt(
         return mts[0]
     else:
         return hl.MatrixTable.union_rows(*mts)
-    
+
 
 def downsample_mt(
     mt: hl.matrixtable.MatrixTable,
     prob: Optional[float] = None,
-    seed = 42,
+    seed=42,
 ) -> hl.matrixtable.MatrixTable:
     """Reduce number of samples in MatrixTable
 
@@ -62,10 +64,11 @@ def downsample_mt(
     """
 
     if prob is not None:
-        return mt.sample_cols(p=prob, seed = seed)
+        return mt.sample_cols(p=prob, seed=seed)
     else:
         return mt
-    
+
+
 def interval_qc_mt(
     mt: hl.matrixtable.MatrixTable,
     mapping: dict,
@@ -96,9 +99,13 @@ def interval_qc_mt(
 
     return mt
 
-def hard_sample_filter_mt(
+
+def sample_QC_mt(
     mt: hl.matrixtable.MatrixTable,
-    samples_to_remove: str,
+    MIN_CALL_RATE: float,
+    MIN_MEAN_DP: float,
+    MIN_MEAN_GQ: float,
+
 ) -> hl.matrixtable.MatrixTable:
     """Filter out samples failing quality control
 
@@ -115,13 +122,11 @@ def hard_sample_filter_mt(
     hl.matrixtable.MatrixTable
         MatrixTable with filtered samples
     """
-
-    ht = hl.import_table(samples_to_remove, no_header=True, key="f0")
-
-    mt = mt.anti_join_cols(ht)
-
-    mt = mt.filter_cols(mt.s.startswith("-"), keep=False)
-
+    mt = hl.sample_qc(mt)
+    mt = mt.filter_cols(mt.sample_qc.call_rate >= MIN_CALL_RATE)
+    mt = mt.filter_cols(mt.sample_qc.dp_stats.mean >= MIN_MEAN_DP)
+    mt = mt.filter_cols(mt.sample_qc.gq_stats.mean >= MIN_MEAN_GQ)
+    
     return mt
 
 
@@ -139,38 +144,53 @@ def smart_split_multi_mt(
 
     return mt
 
-def hard_variant_filter_mt(
+
+def variant_QC_mt(
     mt: hl.matrixtable.MatrixTable,
-    min_p_value_hwe: Optional[float],
-    min_GQ: Union[float, int, None],
+    MIN_P_HWE: Optional[float],
+    MIN_GQ: Union[float, int, None],
 ) -> hl.matrixtable.MatrixTable:
 
-    try:
-        mt.variant_qc
-    except AttributeError:
-        print("hard_variant_filter requires variant_qc")
+    mt = hl.variant_qc(mt)
 
-    if min_p_value_hwe is not None:
-        mt = mt.filter_rows(
-            mt.variant_qc.p_value_hwe < min_p_value_hwe, keep=False
-        )
+    if MIN_P_HWE is not None:
+        mt = mt.filter_rows(mt.variant_qc.p_value_hwe >= MIN_P_HWE)
 
-    if min_GQ is not None:
-        mt = mt.filter_rows(mt.variant_qc.gq_stats.mean < min_GQ, keep=False)
+    if MIN_GQ is not None:
+        mt = mt.filter_rows(mt.variant_qc.gq_stats.mean >= MIN_GQ)
+        
+    mt = mt.filter_rows((mt.variant_qc.AF[0] > 0.0) & (mt.variant_qc.AF[0] < 1.0))
 
     return mt
 
+
 def genotype_filter_mt(
     mt: hl.matrixtable.MatrixTable,
-    min_DP: Union[float, int, None],
-    min_GQ: Union[float, int, None],
+    MIN_DP: Union[float, int, None],
+    MIN_GQ: Union[float, int, None],
+    MIN_PL: Union[float, int, None],
     log_entries_filtered: True,
 ) -> hl.matrixtable.MatrixTable:
 
     mt = mt.filter_entries(
-        (mt.GT.is_haploid() & (mt.DP > min_DP // 2) & (mt.GQ >= min_GQ))
-        | ((mt.GT.is_diploid() & (mt.DP > min_DP) & (mt.GQ >= min_GQ))),
-        keep=True,
+        hl.is_defined(mt.GT)
+        & (
+            (mt.GT.is_hom_ref() & ((mt.GQ < MIN_GQ) | (mt.DP < MIN_DP)))
+            | (
+                mt.GT.is_het()
+                & (
+                    (((mt.AD[0] + mt.AD[1]) / mt.DP) < 0.8)
+                    | ((mt.AD[1] / mt.DP) < 0.2)
+                    | (mt.PL[0] < MIN_PL)
+                    | (mt.DP < MIN_DP)
+                )
+            )
+            | (
+                mt.GT.is_hom_var()
+                & (((mt.AD[1] / mt.DP) < 0.8) | (mt.PL[0] < MIN_PL) | (mt.DP < MIN_DP))
+            )
+        ),
+        keep=False,
     )
 
     if log_entries_filtered:
@@ -178,18 +198,6 @@ def genotype_filter_mt(
 
     return mt
 
-def filter_no_carriers(
-    mt: hl.matrixtable.MatrixTable,
-) -> hl.matrixtable.MatrixTable:
-
-    try:
-        mt.variant_qc
-    except AttributeError:
-        print("filter_no_carriers requires variant_qc")
-
-    mt = mt.filter_rows(mt.variant_qc.n_non_ref == 0, keep=False)
-
-    return mt
 
 def add_varid(mt: hl.MatrixTable) -> hl.MatrixTable:
     """Annotate rows with varid
@@ -218,3 +226,31 @@ def add_varid(mt: hl.MatrixTable) -> hl.MatrixTable:
     )
 
     return mt
+
+
+def annotate_mt(mt: hl.MatrixTable, gene: str, **kwargs) -> hl.MatrixTable:
+
+    func = getattr(annotations, f"annotate_{gene}")
+
+    return func(mt, **kwargs)
+
+
+def filter_related_mt(
+    mt: hl.MatrixTable, rel_file: str, max_kinship: Optional[float]
+) -> hl.MatrixTable:
+    rel = hl.import_table(
+        rel_file,
+        delimiter=" ",
+        impute=True,
+        types={"ID1": "str", "ID2": "str"},
+    )
+
+    rel = rel.filter(rel.Kinship > max_kinship, keep=True)
+
+    related_samples_to_remove = hl.maximal_independent_set(
+        i=rel.ID1,
+        j=rel.ID2,
+        keep=False,
+    ).key_by("node")
+
+    return mt.anti_join_cols(related_samples_to_remove)

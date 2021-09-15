@@ -1,11 +1,28 @@
-GENE = "OPRM1"
+GENE = "GCGR"
 
 [IMPORT]
-DATA_DIR = "/mnt/project/misc_data/"
+MISC_DIR = "/mnt/project/data/misc"
 MAPPING_FILE = "mappings_with_blocks.tsv"
 INTERVAL_FILE = "xgen_plus_spikein.b38.bed"
 VCF_DIR = "/mnt/project/Bulk/Exome sequences/Population level exome OQFE variants, pVCF format"
 TMP_DIR = "../tmp"
 LOG_DIR = "../hail_logs/"
 VCF_VERSION = "v1"
-DOWNSAMPLE_P = 0.005
+# DOWNSAMPLE_P = 0.005
+
+[SAMPLE_QC]
+REL_FILE = "/mnt/project/data/processed/samples_to_remove.tsv"
+SAMP_FILE = "/mnt/project/data/processed/samples_to_keep.tsv"
+MAX_KINSHIP = 0.25
+MIN_CALL_RATE = 0.95
+MIN_MEAN_DP = 15
+MIN_MEAN_GQ = 50
+
+[VARIANT_QC]
+MIN_P_HWE = 10e-15
+MIN_GQ = 20
+
+[ENTRY_QC]
+MIN_DP = 10
+MIN_GQ = 20
+MIN_PL = 20

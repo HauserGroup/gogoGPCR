@@ -131,3 +131,6 @@ dmypy.json
 # Directories
 tmp/
 hail_logs/
+
+# UKB
+*.dat
