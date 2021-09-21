@@ -159,7 +159,7 @@ def variant_QC_mt(
     if MIN_GQ is not None:
         mt = mt.filter_rows(mt.variant_qc.gq_stats.mean >= MIN_GQ)
         
-    mt = mt.filter_rows((mt.variant_qc.AF[0] > 0.0) & (mt.variant_qc.AF[0] < 1.0))
+    # mt = mt.filter_rows((mt.variant_qc.AF[0] > 0.0) & (mt.variant_qc.AF[0] < 1.0))
 
     return mt
 
@@ -254,3 +254,24 @@ def filter_related_mt(
     ).key_by("node")
 
     return mt.anti_join_cols(related_samples_to_remove)
+
+def recode_GT_to_GP(
+    mt: hl.matrixtable.MatrixTable,
+) -> hl.matrixtable.MatrixTable:
+
+    GPs = hl.literal([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
+
+    mt = mt.annotate_entries(GP=GPs[mt.GT.n_alt_alleles()])
+
+    return mt
+
+
+def write_bgen(mt: hl.matrixtable.MatrixTable, output: str) -> None:
+
+    mt = add_varid(mt)
+
+    mt = recode_GT_to_GP(mt)
+
+    hl.export_bgen(
+        mt=mt, varid=mt.varid, rsid=mt.varid, gp=mt.GP, output=output
+    )

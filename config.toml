@@ -1,14 +1,21 @@
 GENE = "GCGR"
+REFERENCE_GENOME = 'GRCh38'
 
 [IMPORT]
-MISC_DIR = "/mnt/project/data/misc"
-MAPPING_FILE = "mappings_with_blocks.tsv"
-INTERVAL_FILE = "xgen_plus_spikein.b38.bed"
+
+MAPPING_FILE = "/mnt/project/data/misc/mappings_with_blocks.tsv"
+INTERVAL_FILE = "/mnt/project/data/misc/xgen_plus_spikein.b38.bed"
 VCF_DIR = "/mnt/project/Bulk/Exome sequences/Population level exome OQFE variants, pVCF format"
-TMP_DIR = "../tmp"
 LOG_DIR = "../hail_logs/"
 VCF_VERSION = "v1"
 # DOWNSAMPLE_P = 0.005
+
+[ANNOTATE]
+SNV_ONLY = true
+USE_VEP = true
+VEP_JSON = "/mnt/project/data/misc/GRCh38_VEP.json"
+MISSENSE_ONLY = true
+ANNOTATION_DIR = "/mnt/project/data/annotations"
 
 [SAMPLE_QC]
 REL_FILE = "/mnt/project/data/processed/samples_to_remove.tsv"
@@ -20,9 +27,12 @@ MIN_MEAN_GQ = 50
 
 [VARIANT_QC]
 MIN_P_HWE = 10e-15
-MIN_GQ = 20
+MIN_VAR_GQ = 20
 
 [ENTRY_QC]
 MIN_DP = 10
 MIN_GQ = 20
 MIN_PL = 20
+
+[EXPORT]
+TMP_DIR = "../tmp"

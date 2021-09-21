@@ -1,8 +1,8 @@
 import hail as hl
 from src.resources import lauryns_variants
 
-def annotate_OPRM1(mt: hl.MatrixTable) -> hl.MatrixTable:
-    annot = hl.import_table("file:///mnt/project/misc_data/martquery_0901114913_896.txt", impute = True)
+def annotate_OPRM1(mt: hl.MatrixTable, annotations: str) -> hl.MatrixTable:
+    annot = hl.import_table(annotations, impute = True)
 
     annot = annot.filter(annot["Transcript stable ID"] == "ENST00000229768")
 
@@ -24,3 +24,8 @@ def annotate_OPRM1(mt: hl.MatrixTable) -> hl.MatrixTable:
     return mt
     
     
+def annotate_GCGR(mt: hl.MatrixTable, annotations: str) -> hl.MatrixTable:
+    ht = hl.import_table(annotations).key_by("variant")
+    mt = mt.annotate_rows(**ht[mt.protCons])
+    
+    return mt
