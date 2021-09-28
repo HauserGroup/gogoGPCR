@@ -18,9 +18,11 @@ MISSENSE_ONLY = true
 ANNOTATION_DIR = "/mnt/project/data/annotations"
 
 [SAMPLE_QC]
-REL_FILE = "/mnt/project/data/processed/samples_to_remove.tsv"
-SAMP_FILE = "/mnt/project/data/processed/samples_to_keep.tsv"
-MAX_KINSHIP = 0.25
+UKB_REL_DAT_FILE = "/mnt/project/Bulk/Genotype Results/Genotype calls/ukb_rel.dat"
+REL_FILE = "samples_to_remove.tsv"
+SAMP_FILE = "samples_to_keep.tsv"
+DATA_DIR = "/data/processed"
+MAX_KINSHIP = 0.088
 MIN_CALL_RATE = 0.95
 MIN_MEAN_DP = 15
 MIN_MEAN_GQ = 50
