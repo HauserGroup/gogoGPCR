@@ -168,30 +168,24 @@ def genotype_filter_mt(
     mt: hl.matrixtable.MatrixTable,
     MIN_DP: Union[float, int, None],
     MIN_GQ: Union[float, int, None],
-    MIN_PL: Union[float, int, None],
     log_entries_filtered: True,
 ) -> hl.matrixtable.MatrixTable:
+    
+    mt= mt.annotate_entries(AB = (mt.AD[1] / hl.sum(mt.AD) ))
+    
+    filter_condition_ab = ((mt.GT.is_hom_ref() & (mt.AB <= 0.1)) |
+                            (mt.GT.is_het() & (mt.AB >= 0.25) & (mt.AB <= 0.75)) |
+                            (mt.GT.is_hom_var() & (mt.AB >= 0.9)))
 
-    mt = mt.filter_entries(
-        hl.is_defined(mt.GT)
-        & (
-            (mt.GT.is_hom_ref() & ((mt.GQ < MIN_GQ) | (mt.DP < MIN_DP)))
-            | (
-                mt.GT.is_het()
-                & (
-                    (((mt.AD[0] + mt.AD[1]) / mt.DP) < 0.8)
-                    | ((mt.AD[1] / mt.DP) < 0.2)
-                    | (mt.PL[0] < MIN_PL)
-                    | (mt.DP < MIN_DP)
-                )
-            )
-            | (
-                mt.GT.is_hom_var()
-                & (((mt.AD[1] / mt.DP) < 0.8) | (mt.PL[0] < MIN_PL) | (mt.DP < MIN_DP))
-            )
-        ),
-        keep=False,
+    mt = mt.filter_entries( 
+                        (mt.GQ>=MIN_GQ) &
+                        (mt.DP >= MIN_DP) &
+                        filter_condition_ab
     )
+    
+    fraction_filtered = mt.aggregate_entries(hl.agg.fraction(~filter_condition_ab))
+    print(f'Filtering {fraction_filtered * 100:.2f}% entries out of downstream analysis.')
+    
 
     if log_entries_filtered:
         mt = mt.compute_entry_filter_stats()

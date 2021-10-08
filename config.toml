@@ -1,4 +1,4 @@
-GENE = "GCGR"
+GENE = "DRD2"
 REFERENCE_GENOME = 'GRCh38'
 
 [IMPORT]
@@ -8,20 +8,21 @@ INTERVAL_FILE = "/mnt/project/data/misc/xgen_plus_spikein.b38.bed"
 VCF_DIR = "/mnt/project/Bulk/Exome sequences/Population level exome OQFE variants, pVCF format"
 LOG_DIR = "../hail_logs/"
 VCF_VERSION = "v1"
+DATABASE = "matrix_tables"
 # DOWNSAMPLE_P = 0.005
 
 [ANNOTATE]
 SNV_ONLY = true
 USE_VEP = true
-VEP_JSON = "/mnt/project/data/misc/GRCh38_VEP.json"
+VEP_JSON = "GRCh38_VEP.json"
 MISSENSE_ONLY = true
-ANNOTATION_DIR = "/mnt/project/data/annotations"
+ANNOTATION_DIR = "annotations/"
 
 [SAMPLE_QC]
-UKB_REL_DAT_FILE = "/mnt/project/Bulk/Genotype Results/Genotype calls/ukb_rel.dat"
+UKB_REL_DAT_FILE = "Bulk/Genotype Results/Genotype calls/ukb_rel.dat"
 REL_FILE = "samples_to_remove.tsv"
 SAMP_FILE = "samples_to_keep.tsv"
-DATA_DIR = "/data/processed"
+DATA_DIR = "/mnt/project/data/processed"
 MAX_KINSHIP = 0.088
 MIN_CALL_RATE = 0.95
 MIN_MEAN_DP = 15
