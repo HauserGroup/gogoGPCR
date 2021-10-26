@@ -123,9 +123,10 @@ def sample_QC_mt(
         MatrixTable with filtered samples
     """
     mt = hl.sample_qc(mt)
-    mt = mt.filter_cols(mt.sample_qc.call_rate >= MIN_CALL_RATE)
-    mt = mt.filter_cols(mt.sample_qc.dp_stats.mean >= MIN_MEAN_DP)
-    mt = mt.filter_cols(mt.sample_qc.gq_stats.mean >= MIN_MEAN_GQ)
+    mt = mt.filter_cols((mt.sample_qc.call_rate >= MIN_CALL_RATE) &
+                        (mt.sample_qc.dp_stats.mean >= MIN_MEAN_DP) &
+                        (mt.sample_qc.gq_stats.mean >= MIN_MEAN_GQ)
+                       )
     
     return mt
 
@@ -159,7 +160,7 @@ def variant_QC_mt(
     if MIN_GQ is not None:
         mt = mt.filter_rows(mt.variant_qc.gq_stats.mean >= MIN_GQ)
         
-    # mt = mt.filter_rows((mt.variant_qc.AF[0] > 0.0) & (mt.variant_qc.AF[0] < 1.0))
+    mt = mt.filter_rows((mt.variant_qc.AF[0] > 0.0) & (mt.variant_qc.AF[0] < 1.0))
 
     return mt
 
@@ -174,7 +175,6 @@ def genotype_filter_mt(
     mt = mt.annotate_entries(AB = (mt.AD[1] / hl.sum(mt.AD) ))
     
     
-
     #set filter condition for AB
     filter_condition_ab = ((mt.GT.is_hom_ref() & (mt.AB <= 0.1)) |
                             (mt.GT.is_het() & (mt.AB >= 0.25) & (mt.AB <= 0.75)) |
@@ -186,7 +186,7 @@ def genotype_filter_mt(
 
 
     mt = mt.filter_entries( (mt.GQ>=MIN_GQ) &
-                 (mt.DP >= MIN_DP) &
+                 (mt.DP >= MIN_DP) &                 
                  ((mt.GT.is_hom_ref() & (mt.AB <= 0.1)) |
                         (mt.GT.is_het() & (mt.AB >= 0.25) & (mt.AB <= 0.75)) |
                         (mt.GT.is_hom_var() & (mt.AB >= 0.9))))
@@ -273,3 +273,13 @@ def write_bgen(mt: hl.matrixtable.MatrixTable, output: str) -> None:
     hl.export_bgen(
         mt=mt, varid=mt.varid, rsid=mt.varid, gp=mt.GP, output=output
     )
+    
+def generate_report(mt):
+    intr = mt.filter_rows((hl.is_defined(mt.annotations)))
+    intr = hl.variant_qc(intr)
+    intr = intr.select_rows(intr.variant_qc, intr.protCons, intr.annotations).rows()
+    intr = intr.annotate(**intr.variant_qc)
+    intr = intr.annotate(**intr.annotations)
+    intr = intr.drop("variant_qc", "gq_stats", "dp_stats", "annotations")
+    
+    return intr
