@@ -171,21 +171,25 @@ def genotype_filter_mt(
     log_entries_filtered: True,
 ) -> hl.matrixtable.MatrixTable:
     
-    mt= mt.annotate_entries(AB = (mt.AD[1] / hl.sum(mt.AD) ))
+    mt = mt.annotate_entries(AB = (mt.AD[1] / hl.sum(mt.AD) ))
     
+    
+
+    #set filter condition for AB
     filter_condition_ab = ((mt.GT.is_hom_ref() & (mt.AB <= 0.1)) |
                             (mt.GT.is_het() & (mt.AB >= 0.25) & (mt.AB <= 0.75)) |
                             (mt.GT.is_hom_var() & (mt.AB >= 0.9)))
-
-    mt = mt.filter_entries( 
-                        (mt.GQ>=MIN_GQ) &
-                        (mt.DP >= MIN_DP) &
-                        filter_condition_ab
-    )
-    
     fraction_filtered = mt.aggregate_entries(hl.agg.fraction(~filter_condition_ab))
-    print(f'Filtering {fraction_filtered * 100:.2f}% entries out of downstream analysis.')
     
+    print(f'Filtering {fraction_filtered * 100:.2f}% entries out of downstream analysis.')
+
+
+
+    mt = mt.filter_entries( (mt.GQ>=MIN_GQ) &
+                 (mt.DP >= MIN_DP) &
+                 ((mt.GT.is_hom_ref() & (mt.AB <= 0.1)) |
+                        (mt.GT.is_het() & (mt.AB >= 0.25) & (mt.AB <= 0.75)) |
+                        (mt.GT.is_hom_var() & (mt.AB >= 0.9))))
 
     if log_entries_filtered:
         mt = mt.compute_entry_filter_stats()

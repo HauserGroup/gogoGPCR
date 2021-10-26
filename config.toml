@@ -14,7 +14,7 @@ DATABASE = "matrix_tables"
 [ANNOTATE]
 SNV_ONLY = true
 USE_VEP = true
-VEP_JSON = "GRCh38_VEP.json"
+VEP_JSON = "/mnt/project/data/misc/GRCh38_VEP.json"
 MISSENSE_ONLY = true
 ANNOTATION_DIR = "annotations/"
 
