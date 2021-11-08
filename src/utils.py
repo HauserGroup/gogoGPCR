@@ -3,34 +3,38 @@ from pathlib import Path
 import hail as hl
 from typing import List
 
-def get_position(gene: str, mapping: dict):
-
-    blocks = mapping.get("VCF_block")
-    blocks = blocks.split(",")
-
-    chromosome = mapping.get("GRCh38_region")
-    start = mapping.get("GRCh38_start")
-    end = mapping.get("GRCh38_start")
+def get_position(gene: str, mapping: pd.DataFrame):
+    
+    blocks = mapping.loc[gene, "VCF_block"].split(",")
+    chromosome = mapping.loc[gene, "GRCh38_region"]
+    start = mapping.loc[gene, "GRCh38_start"]
+    end = mapping.loc[gene, "GRCh38_end"]
 
     return chromosome, blocks, start, end
 
-def lookup_vcfs(mapping: dict, vcfdir: str, gene: str, version: str):
+def lookup_regions(gene: str, mapping: pd.DataFrame):
+    chromosome, _, start, end = get_position(gene, mapping)
+    
 
+    region = [
+            hl.parse_locus_interval(
+                f"[chr{chromosome}:{start}-chr{chromosome}:{end}]"
+            )
+        ]
+    
+    return region
+
+
+def lookup_vcfs(mapping: pd.DataFrame, vcfdir: str, gene: str, version: str) -> list:
+    
     chromosome, blocks, _, _ = get_position(gene, mapping)
-
-    # Locate VCF file(s)
-
+    
     vcf_files = [
         f"file://{vcfdir}/ukb23156_c{chromosome}_b{block}_{version}.vcf.gz"
         for block in blocks
     ]
 
-    tbi_files = [
-        f"file://{vcfdir}/ukb23156_c{chromosome}_b{block}_{version}.vcf.gz.tbi"
-        for block in blocks
-    ]
-
-    return {"vcfs": vcf_files, "tbis": tbi_files}
+    return vcf_files
 
 def are_variants_present(mt: hl.MatrixTable, var_col: str, variants: List[str]) -> None:
     for v in variants:    

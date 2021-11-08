@@ -1,4 +1,3 @@
-GENE = "DRD2"
 REFERENCE_GENOME = 'GRCh38'
 
 [IMPORT]
@@ -6,6 +5,7 @@ REFERENCE_GENOME = 'GRCh38'
 MAPPING_FILE = "/mnt/project/data/misc/mappings_with_blocks.tsv"
 INTERVAL_FILE = "/mnt/project/data/misc/xgen_plus_spikein.b38.bed"
 VCF_DIR = "/mnt/project/Bulk/Exome sequences/Population level exome OQFE variants, pVCF format"
+GENE_FILE = "../genes.txt"
 LOG_DIR = "../hail_logs/"
 VCF_VERSION = "v1"
 DATABASE = "matrix_tables"

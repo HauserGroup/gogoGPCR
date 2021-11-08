@@ -6,8 +6,8 @@ from typing import Optional, Union, List
 
 
 def import_mt(
-    vcf_files: Union[str, List[str]],
-    mapping: dict,
+    genes: List[str],
+    mapping: pd.DataFrame,
 ) -> hl.matrixtable.MatrixTable:
     """Import VCF file or list of VCF files as MatrixTable
 
@@ -15,24 +15,28 @@ def import_mt(
     ----------
     vcf_files : Union[str, list[str]]
         VCF or list of VCF files
-    drop_samples : bool, optional
-        Drop sample information and return only variant info, by default False
 
     Returns
     -------
     hl.matrixtable.MatrixTable
         Raw MatrixTable of all samples and variants, very large. GRCh38 as reference.
     """
-
-    region = [
-        hl.parse_locus_interval(
-            f"[chr{mapping['GRCh38_region']}:{mapping['GRCh38_start']}-chr{mapping['GRCh38_region']}:{mapping['GRCh38_end']}]"
-        )
-    ]
+    
+    get_vcfs = partial(lookup_vcfs, mapping = mapping, vcfdir = VCF_DIR, version = VCF_VERSION)
+    get_regions = partial(lookup_regions, mapping = mapping)
+    
+    # evil double list-comprehension
+    vcf_files = [vcf for gene in genes for vcf in get_vcfs(gene = gene)] 
+    regions = [region for gene in genes for region in lookup_regions(gene, mapping)] 
+    
+    print(vcf_files)
+    for reg in regions:
+        reg.show()
+    
 
     mts = hl.import_gvcfs(
         vcf_files,
-        partitions=region,
+        partitions=regions,
         reference_genome="GRCh38",
         array_elements_required=False,
     )
