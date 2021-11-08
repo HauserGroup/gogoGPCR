@@ -29,10 +29,6 @@ def import_mt(
     vcf_files = [vcf for gene in genes for vcf in get_vcfs(gene = gene)] 
     regions = [region for gene in genes for region in lookup_regions(gene, mapping)] 
     
-    print(vcf_files)
-    for reg in regions:
-        reg.show()
-    
 
     mts = hl.import_gvcfs(
         vcf_files,
