@@ -1,4 +1,5 @@
 REFERENCE_GENOME = 'GRCh38'
+NAME = "DRD2"
 
 [IMPORT]
 
@@ -16,7 +17,7 @@ SNV_ONLY = true
 USE_VEP = true
 VEP_JSON = "/mnt/project/data/misc/GRCh38_VEP.json"
 MISSENSE_ONLY = true
-ANNOTATION_DIR = "annotations/"
+ANNOTATION_DIR = "/mnt/project/annotations/"
 
 [SAMPLE_QC]
 UKB_REL_DAT_FILE = "Bulk/Genotype Results/Genotype calls/ukb_rel.dat"

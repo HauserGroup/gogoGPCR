@@ -1,5 +1,8 @@
 import hail as hl
 import src.annotations as annotations
+import src.utils as utils
+import pandas as pd
+from functools import partial
 
 from pathlib import Path
 from typing import Optional, Union, List
@@ -8,6 +11,8 @@ from typing import Optional, Union, List
 def import_mt(
     genes: List[str],
     mapping: pd.DataFrame,
+    vcf_dir: str,
+    vcf_version: str,
 ) -> hl.matrixtable.MatrixTable:
     """Import VCF file or list of VCF files as MatrixTable
 
@@ -22,12 +27,12 @@ def import_mt(
         Raw MatrixTable of all samples and variants, very large. GRCh38 as reference.
     """
     
-    get_vcfs = partial(lookup_vcfs, mapping = mapping, vcfdir = VCF_DIR, version = VCF_VERSION)
-    get_regions = partial(lookup_regions, mapping = mapping)
+    get_vcfs = partial(utils.lookup_vcfs, mapping = mapping, vcfdir = vcf_dir, version = vcf_version)
+    get_regions = partial(utils.lookup_regions, mapping = mapping)
     
     # evil double list-comprehension
     vcf_files = [vcf for gene in genes for vcf in get_vcfs(gene = gene)] 
-    regions = [region for gene in genes for region in lookup_regions(gene, mapping)] 
+    regions = [region for gene in genes for region in get_regions(gene = gene)] 
     
 
     mts = hl.import_gvcfs(
@@ -226,9 +231,9 @@ def add_varid(mt: hl.MatrixTable) -> hl.MatrixTable:
     return mt
 
 
-def annotate_mt(mt: hl.MatrixTable, gene: str, **kwargs) -> hl.MatrixTable:
+def annotate_mt(mt: hl.MatrixTable, name: str, **kwargs) -> hl.MatrixTable:
 
-    func = getattr(annotations, f"annotate_{gene}")
+    func = getattr(annotations, f"annotate_{name}")
 
     return func(mt, **kwargs)
 
