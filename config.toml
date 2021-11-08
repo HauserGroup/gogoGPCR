@@ -20,8 +20,7 @@ ANNOTATION_DIR = "annotations/"
 
 [SAMPLE_QC]
 UKB_REL_DAT_FILE = "Bulk/Genotype Results/Genotype calls/ukb_rel.dat"
-REL_FILE = "samples_to_remove.tsv"
-SAMP_FILE = "samples_to_keep.tsv"
+SAMPLE_FILTER_FILE = "samples_to_remove.tsv"
 DATA_DIR = "/mnt/project/data/processed"
 MAX_KINSHIP = 0.088
 MIN_CALL_RATE = 0.95
