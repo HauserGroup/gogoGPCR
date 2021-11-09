@@ -76,8 +76,7 @@ def downsample_mt(
 
 def interval_qc_mt(
     mt: hl.matrixtable.MatrixTable,
-    mapping: dict,
-    intervals: Union[str, Path],
+    bed_file: Union[str, Path],
 ) -> hl.matrixtable.MatrixTable:
     """Filter to only Target region used by the WES capture experiment
 
@@ -95,9 +94,8 @@ def interval_qc_mt(
     """
 
     interval_table = hl.import_bed(
-        intervals,
+        bed_file,
         reference_genome="GRCh38",
-        filter=f"^(?!(chr{mapping['GRCh38_region']}))",
     )
 
     mt = mt.filter_rows(hl.is_defined(interval_table[mt.locus]))

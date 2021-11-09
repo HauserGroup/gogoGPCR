@@ -49,5 +49,14 @@ def show_stats(mt):
     #intr = intr.drop("variant_qc", "gq_stats", "dp_stats", "annotations")
     stats = intr.group_by(intr.annotation).aggregate(n_carriers = hl.agg.sum(intr.variant_qc.n_het),
                                                     n_variants = hl.agg.count())
-    stats.show(-1)
+    return stats
 
+def haplotype_carriers(mt: hl.MatrixTable, variants: List[str]) -> int:
+    mt = mt.filter_rows(hl.literal(variants).contains(mt.protCons))
+    
+    assert mt.count_rows() == len(variants), "Haplotype does not exist, variant missing"
+    
+    mt = mt.annotate_cols(carrier = hl.agg.all(mt.GT.is_non_ref()))
+    num_carriers = mt.aggregate_cols(hl.agg.sum(mt.carrier))
+    
+    return num_carriers
