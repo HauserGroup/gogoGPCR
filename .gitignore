@@ -135,3 +135,6 @@ hail_logs/
 
 # UKB
 *.dat
+
+# archives
+*.gz
