@@ -41,6 +41,7 @@ mt = hl.import_plink(bed = allChrs + ".bed",
                      fam = allChrs + ".fam",
                      reference_genome="GRCh37",
                      min_partitions = 800,
+                     missing='-9',
                     )
                      
 
@@ -55,7 +56,7 @@ print(f"New number of loci: {mt.count()}")
 mt = mt.key_rows_by(locus=mt.new_locus.result, alleles = mt.alleles)  
 
 # %%
-hl.export_plink(mt, "/tmp/ukb_allChrs.GRCh38")
+hl.export_plink(mt, "/tmp/ukb_allChrs.GRCh38", fam_id = mt.s, is_female = mt.is_female, pheno = -9)
 
 # %%
 # subprocess.run(["hadoop", "fs", "-get", "/tmp/ukb_allChrs.GRCh38.*"], check = True, shell = False)
