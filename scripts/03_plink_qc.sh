@@ -17,8 +17,8 @@ data_file_dir="/Data/step1/"
 
 run_plink_qc="plink2 --bfile ukb_allChrs.GRCh38\
  --autosome\
- --maf 0.01 --mac 20 --geno 0.1 --hwe 1e-15 --must-have-sex\
- --mind 0.1 --write-snplist --write-samples\
+ --maf 0.01 --mac 20 --geno 0.1 --hwe 1e-15 \
+ --mind 0.1 --write-snplist --write-samples --remove-nosex\
  --no-id-header --out  WES_qc_pass"
 
 dx run swiss-army-knife -iin="${data_file_dir}/ukb_allChrs.GRCh38.bed" \
