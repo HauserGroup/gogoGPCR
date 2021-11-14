@@ -14,16 +14,14 @@
 # ---
 
 # %%
-import pyspark
-import dxpy
-import dxdata
 import re
-
-import pyspark.sql.functions as psf
-
-import pandas as pd
-
 import subprocess
+
+import dxdata
+import dxpy
+import pandas as pd
+import pyspark
+import pyspark.sql.functions as psf
 
 sc = pyspark.SparkContext()
 spark = pyspark.sql.SparkSession(sc)

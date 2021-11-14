@@ -14,12 +14,12 @@
 # ---
 
 # %%
-import pyspark
-import dxpy
-import dxdata
 import subprocess
-
 from distutils.version import LooseVersion
+
+import dxdata
+import dxpy
+import pyspark
 from pyspark.sql import functions as F
 from pyspark.sql.types import IntegerType
 

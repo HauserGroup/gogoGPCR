@@ -19,17 +19,16 @@
 
 
 # %%
-import toml
 import os
 
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
-
-import pyspark
-import dxpy
 import dxdata
+import dxpy
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import pyspark
+import toml
+from matplotlib.lines import Line2D
 
 # %%
 with open("../config.toml") as f:

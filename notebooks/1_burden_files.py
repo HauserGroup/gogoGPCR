@@ -19,21 +19,22 @@
 # First, we import necessary libraries and configurations from config.toml. Then we initialise Spark and Hail.
 
 # %%
-# Imports
-import toml
-from pathlib import Path
-from datetime import datetime
-from pprint import pprint
-from functools import partial
-import sys
-from distutils.version import LooseVersion
 import subprocess
+import sys
+from datetime import datetime
+from distutils.version import LooseVersion
+from functools import partial
+from pathlib import Path
+from pprint import pprint
 
+import dxdata
+import dxpy
+import hail as hl
 import pandas as pd
 import pyspark
-import dxpy
-import dxdata
-import hail as hl
+import toml
+from src.matrixtables import *
+from src.utils import show_stats
 
 module_path = Path("..").resolve().__str__()
 
@@ -45,8 +46,6 @@ try:
 except:
     pass
 
-from src.utils import show_stats
-from src.matrixtables import *
 
 hl.plot.output_notebook()
 

@@ -16,24 +16,22 @@
 # %%
 import os
 import sys
-
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
-
-import pyspark
-import dxpy
-import dxdata
-
 from pathlib import Path
+
+import dxdata
+import dxpy
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import pyspark
+import src.results as sr
+from matplotlib.lines import Line2D
 
 module_path = Path('..').resolve().__str__()
 
 if module_path not in sys.path:
     sys.path.append(module_path)
-    
-import src.results as sr
+
 
 # %%
 # Flags

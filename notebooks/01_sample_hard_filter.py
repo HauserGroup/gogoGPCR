@@ -14,16 +14,15 @@
 # ---
 
 # %%
-import pyspark
-import dxpy
-import dxdata
-import toml
-
 from distutils.version import LooseVersion
-from subprocess import run
 from pathlib import Path
+from subprocess import run
 
+import dxdata
+import dxpy
 import hail as hl
+import pyspark
+import toml
 
 # %%
 sc = pyspark.SparkContext()
