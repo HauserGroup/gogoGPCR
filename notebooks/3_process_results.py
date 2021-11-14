@@ -14,9 +14,6 @@
 # ---
 
 # %%
-# !pip install toml
-
-# %%
 import os
 import sys
 
@@ -200,8 +197,6 @@ plt_df.head()
 
 
 # %%
-
-# %%
 def plot_BT(df, width = 4, height = 12, phenotypes = None, mask):
     
     if phenotypes is None:
@@ -222,8 +217,6 @@ def plot_BT(df, width = 4, height = 12, phenotypes = None, mask):
 plot_BT(plt_df)
 
 # %%
-
-
 for ax in range(0, len(phenotypes)):
     temp = plt_df.loc[plt_df.Phenotype.eq(phenotypes[ax]),:]
     temp = temp.loc[plt_df.MASK.isin(masks)]
