@@ -24,8 +24,12 @@ import pyspark
 sc = pyspark.SparkContext()
 spark = pyspark.sql.SparkSession(sc)
 
-dispensed_database_name = dxpy.find_one_data_object(classname="database", name="app*", folder="/", name_mode="glob", describe=True)["describe"]["name"]
-dispensed_dataset_id = dxpy.find_one_data_object(typename="Dataset", name="app*.dataset", folder="/", name_mode="glob")["id"]
+dispensed_database_name = dxpy.find_one_data_object(
+    classname="database", name="app*", folder="/", name_mode="glob", describe=True
+)["describe"]["name"]
+dispensed_dataset_id = dxpy.find_one_data_object(
+    typename="Dataset", name="app*.dataset", folder="/", name_mode="glob"
+)["id"]
 
 spark.sql("USE " + dispensed_database_name)
 
@@ -36,9 +40,11 @@ field_names = [field.name for field in scripts.fields]
 df = scripts.retrieve_fields(names=field_names, engine=dxdata.connect())
 
 # %%
-df.show(10, truncate = False)
+df.show(10, truncate=False)
 
 # %%
-df = spark.sql("SELECT * FROM gp_scripts WHERE bnf_code IS NOT NULL AND LENGTH(bnf_code) = 14")
+df = spark.sql(
+    "SELECT * FROM gp_scripts WHERE bnf_code IS NOT NULL AND LENGTH(bnf_code) = 14"
+)
 print(f"Rows with valid BNF codes: {df.count()}")
-df.show(10, truncate = False)
+df.show(10, truncate=False)

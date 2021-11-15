@@ -30,6 +30,7 @@ import pyspark
 import toml
 
 import sys
+
 sys.path.append("..")
 from src.utils import fields_for_id
 
@@ -75,7 +76,7 @@ participant = dataset["participant"]
 
 # %% [markdown]
 # # Filtering non-Caucasians and rare errors
-# We filter out non-Caucasians (22006), outliers for heterozygosity or missing rate (22027), sex chromosome aneuploidy (22019) or genetic kinship to other participants (22021, UKB defined). 
+# We filter out non-Caucasians (22006), outliers for heterozygosity or missing rate (22027), sex chromosome aneuploidy (22019) or genetic kinship to other participants (22021, UKB defined).
 
 # %%
 # Find relevant field names
@@ -114,7 +115,7 @@ print(f"Samples to be filtered: {filtered_samples_to_remove.count()}")
 # UK Biobank provides a list of genetically related individuals (KING) called 'ukb_rel.dat' which contains a kinship coefficient between pairs of individuals. Here, we remove any sample with a closer than 3rd degree relative (kinship > 0.088) and which is not already filtered out in the previous step. We then use Hail to create a maximal independent set of individuals by removing the smallest amount of related individuals. This is finally combined with the previously filtered samples to give the final list of samples to remove from the analysis.
 
 # %%
-# Import related table, remove any individual already sampled and keep those with kinship > 0.088 
+# Import related table, remove any individual already sampled and keep those with kinship > 0.088
 
 rel = hl.import_table(
     "file:" + "/mnt/project/" + RAW_REL_FILE,
