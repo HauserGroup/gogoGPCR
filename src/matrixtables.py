@@ -26,14 +26,15 @@ def import_mt(
     hl.matrixtable.MatrixTable
         Raw MatrixTable of all samples and variants, very large. GRCh38 as reference.
     """
-    
-    get_vcfs = partial(utils.lookup_vcfs, mapping = mapping, vcfdir = vcf_dir, version = vcf_version)
-    get_regions = partial(utils.lookup_regions, mapping = mapping)
-    
+
+    get_vcfs = partial(
+        utils.lookup_vcfs, mapping=mapping, vcfdir=vcf_dir, version=vcf_version
+    )
+    get_regions = partial(utils.lookup_regions, mapping=mapping)
+
     # evil double list-comprehension
-    vcf_files = [vcf for gene in genes for vcf in get_vcfs(gene = gene)] 
-    regions = [region for gene in genes for region in get_regions(gene = gene)] 
-    
+    vcf_files = [vcf for gene in genes for vcf in get_vcfs(gene=gene)]
+    regions = [region for gene in genes for region in get_regions(gene=gene)]
 
     mts = hl.import_gvcfs(
         vcf_files,
@@ -108,7 +109,6 @@ def sample_QC_mt(
     MIN_CALL_RATE: float,
     MIN_MEAN_DP: float,
     MIN_MEAN_GQ: float,
-
 ) -> hl.matrixtable.MatrixTable:
     """Filter out samples failing quality control
 
@@ -126,11 +126,12 @@ def sample_QC_mt(
         MatrixTable with filtered samples
     """
     mt = hl.sample_qc(mt)
-    mt = mt.filter_cols((mt.sample_qc.call_rate >= MIN_CALL_RATE) &
-                        (mt.sample_qc.dp_stats.mean >= MIN_MEAN_DP) &
-                        (mt.sample_qc.gq_stats.mean >= MIN_MEAN_GQ)
-                       )
-    
+    mt = mt.filter_cols(
+        (mt.sample_qc.call_rate >= MIN_CALL_RATE)
+        & (mt.sample_qc.dp_stats.mean >= MIN_MEAN_DP)
+        & (mt.sample_qc.gq_stats.mean >= MIN_MEAN_GQ)
+    )
+
     return mt
 
 
@@ -162,7 +163,7 @@ def variant_QC_mt(
 
     if MIN_GQ is not None:
         mt = mt.filter_rows(mt.variant_qc.gq_stats.mean >= MIN_GQ)
-        
+
     mt = mt.filter_rows((mt.variant_qc.AF[0] > 0.0) & (mt.variant_qc.AF[0] < 1.0))
 
     return mt
@@ -174,25 +175,30 @@ def genotype_filter_mt(
     MIN_GQ: Union[float, int, None],
     log_entries_filtered: True,
 ) -> hl.matrixtable.MatrixTable:
-    
-    mt = mt.annotate_entries(AB = (mt.AD[1] / hl.sum(mt.AD) ))
-    
-    
-    #set filter condition for AB
-    filter_condition_ab = ((mt.GT.is_hom_ref() & (mt.AB <= 0.1)) |
-                            (mt.GT.is_het() & (mt.AB >= 0.25) & (mt.AB <= 0.75)) |
-                            (mt.GT.is_hom_var() & (mt.AB >= 0.9)))
+
+    mt = mt.annotate_entries(AB=(mt.AD[1] / hl.sum(mt.AD)))
+
+    # set filter condition for AB
+    filter_condition_ab = (
+        (mt.GT.is_hom_ref() & (mt.AB <= 0.1))
+        | (mt.GT.is_het() & (mt.AB >= 0.25) & (mt.AB <= 0.75))
+        | (mt.GT.is_hom_var() & (mt.AB >= 0.9))
+    )
     fraction_filtered = mt.aggregate_entries(hl.agg.fraction(~filter_condition_ab))
-    
-    print(f'Filtering {fraction_filtered * 100:.2f}% entries out of downstream analysis.')
 
+    print(
+        f"Filtering {fraction_filtered * 100:.2f}% entries out of downstream analysis."
+    )
 
-
-    mt = mt.filter_entries( (mt.GQ>=MIN_GQ) &
-                 (mt.DP >= MIN_DP) &                 
-                 ((mt.GT.is_hom_ref() & (mt.AB <= 0.1)) |
-                        (mt.GT.is_het() & (mt.AB >= 0.25) & (mt.AB <= 0.75)) |
-                        (mt.GT.is_hom_var() & (mt.AB >= 0.9))))
+    mt = mt.filter_entries(
+        (mt.GQ >= MIN_GQ)
+        & (mt.DP >= MIN_DP)
+        & (
+            (mt.GT.is_hom_ref() & (mt.AB <= 0.1))
+            | (mt.GT.is_het() & (mt.AB >= 0.25) & (mt.AB <= 0.75))
+            | (mt.GT.is_hom_var() & (mt.AB >= 0.9))
+        )
+    )
 
     if log_entries_filtered:
         mt = mt.compute_entry_filter_stats()
@@ -256,6 +262,7 @@ def filter_related_mt(
 
     return mt.anti_join_cols(related_samples_to_remove)
 
+
 def recode_GT_to_GP(
     mt: hl.matrixtable.MatrixTable,
 ) -> hl.matrixtable.MatrixTable:
@@ -273,10 +280,9 @@ def write_bgen(mt: hl.matrixtable.MatrixTable, output: str) -> None:
 
     mt = recode_GT_to_GP(mt)
 
-    hl.export_bgen(
-        mt=mt, varid=mt.varid, rsid=mt.varid, gp=mt.GP, output=output
-    )
-    
+    hl.export_bgen(mt=mt, varid=mt.varid, rsid=mt.varid, gp=mt.GP, output=output)
+
+
 def generate_report(mt):
     intr = mt.filter_rows((hl.is_defined(mt.annotations)))
     intr = hl.variant_qc(intr)
@@ -284,5 +290,5 @@ def generate_report(mt):
     intr = intr.annotate(**intr.variant_qc)
     intr = intr.annotate(**intr.annotations)
     intr = intr.drop("variant_qc", "gq_stats", "dp_stats", "annotations")
-    
+
     return intr
