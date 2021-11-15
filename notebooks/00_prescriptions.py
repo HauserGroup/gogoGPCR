@@ -19,9 +19,7 @@ import subprocess
 
 import dxdata
 import dxpy
-import pandas as pd
 import pyspark
-import pyspark.sql.functions as psf
 
 sc = pyspark.SparkContext()
 spark = pyspark.sql.SparkSession(sc)
