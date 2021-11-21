@@ -12,7 +12,7 @@ with gzip.open("../data/misc/hg19ToHg38.over.filtered.chain.gz", "wt") as new:
         if f.startswith("chain") and (("_" not in f) and ("M" not in f)):
             writing = True
             f = f.replace("chr", "", 1)
-            
+
         if writing:
             new.write(f)
 

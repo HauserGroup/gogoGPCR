@@ -27,12 +27,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pyspark
-import toml
+import tomli
 from matplotlib.lines import Line2D
 
 # %%
 with open("../config.toml") as f:
-    conf = toml.load(f)
+    conf = tomli.load(f)
 
 GENE = conf["GENE"]
 # REFERENCE_GENOME = conf["REFERENCE_GENOME"]

@@ -1,6 +1,6 @@
 import hail as hl
-import src.annotations as annotations
-import src.utils as utils
+import annotations as annotations
+import utils as utils
 import pandas as pd
 from functools import partial
 
@@ -164,7 +164,9 @@ def variant_QC_mt(
     if MIN_GQ is not None:
         mt = mt.filter_rows(mt.variant_qc.gq_stats.mean >= MIN_GQ)
 
-    mt = mt.filter_rows((mt.variant_qc.AF[0] > 0.0) & (mt.variant_qc.AF[0] < 1.0))
+    mt = mt.filter_rows(
+        (mt.variant_qc.AF[0] > 0.0) & (mt.variant_qc.AF[0] < 1.0)
+    )
 
     return mt
 
@@ -184,10 +186,13 @@ def genotype_filter_mt(
         | (mt.GT.is_het() & (mt.AB >= 0.25) & (mt.AB <= 0.75))
         | (mt.GT.is_hom_var() & (mt.AB >= 0.9))
     )
-    fraction_filtered = mt.aggregate_entries(hl.agg.fraction(~filter_condition_ab))
+    fraction_filtered = mt.aggregate_entries(
+        hl.agg.fraction(~filter_condition_ab)
+    )
 
     print(
-        f"Filtering {fraction_filtered * 100:.2f}% entries out of downstream analysis."
+        f"Filtering {fraction_filtered * 100:.2f}% entries out of downstream"
+        " analysis."
     )
 
     mt = mt.filter_entries(
@@ -280,13 +285,17 @@ def write_bgen(mt: hl.matrixtable.MatrixTable, output: str) -> None:
 
     mt = recode_GT_to_GP(mt)
 
-    hl.export_bgen(mt=mt, varid=mt.varid, rsid=mt.varid, gp=mt.GP, output=output)
+    hl.export_bgen(
+        mt=mt, varid=mt.varid, rsid=mt.varid, gp=mt.GP, output=output
+    )
 
 
 def generate_report(mt):
     intr = mt.filter_rows((hl.is_defined(mt.annotations)))
     intr = hl.variant_qc(intr)
-    intr = intr.select_rows(intr.variant_qc, intr.protCons, intr.annotations).rows()
+    intr = intr.select_rows(
+        intr.variant_qc, intr.protCons, intr.annotations
+    ).rows()
     intr = intr.annotate(**intr.variant_qc)
     intr = intr.annotate(**intr.annotations)
     intr = intr.drop("variant_qc", "gq_stats", "dp_stats", "annotations")

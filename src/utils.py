@@ -18,13 +18,17 @@ def lookup_regions(gene: str, mapping: pd.DataFrame):
     chromosome, _, start, end = get_position(gene, mapping)
 
     region = [
-        hl.parse_locus_interval(f"[chr{chromosome}:{start}-chr{chromosome}:{end}]")
+        hl.parse_locus_interval(
+            f"[chr{chromosome}:{start}-chr{chromosome}:{end}]"
+        )
     ]
 
     return region
 
 
-def lookup_vcfs(mapping: pd.DataFrame, vcfdir: str, gene: str, version: str) -> list:
+def lookup_vcfs(
+    mapping: pd.DataFrame, vcfdir: str, gene: str, version: str
+) -> list:
 
     chromosome, blocks, _, _ = get_position(gene, mapping)
 
@@ -36,7 +40,9 @@ def lookup_vcfs(mapping: pd.DataFrame, vcfdir: str, gene: str, version: str) -> 
     return vcf_files
 
 
-def are_variants_present(mt: hl.MatrixTable, var_col: str, variants: List[str]) -> None:
+def are_variants_present(
+    mt: hl.MatrixTable, var_col: str, variants: List[str]
+) -> None:
     for v in variants:
         print(f"{v}: {mt.aggregate_rows(hl.agg.any(mt[var_col] == v))}")
 
@@ -59,7 +65,9 @@ def show_stats(mt):
 def haplotype_carriers(mt: hl.MatrixTable, variants: List[str]) -> int:
     mt = mt.filter_rows(hl.literal(variants).contains(mt.protCons))
 
-    assert mt.count_rows() == len(variants), "Haplotype does not exist, variant missing"
+    assert mt.count_rows() == len(
+        variants
+    ), "Haplotype does not exist, variant missing"
 
     mt = mt.annotate_cols(carrier=hl.agg.all(mt.GT.is_non_ref()))
     num_carriers = mt.aggregate_cols(hl.agg.sum(mt.carrier))
@@ -68,7 +76,6 @@ def haplotype_carriers(mt: hl.MatrixTable, variants: List[str]) -> int:
 
 
 def fields_for_id(field_id):
-    
 
     field_id = str(field_id)
     fields = participant.find_fields(

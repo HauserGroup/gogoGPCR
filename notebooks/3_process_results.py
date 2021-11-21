@@ -26,11 +26,7 @@ import pandas as pd
 import pyspark
 from matplotlib.lines import Line2D
 
-module_path = Path("..").resolve().__str__()
-if module_path not in sys.path:
-    sys.path.append(module_path)
-
-import src.results as sr
+import results
 
 
 # %%
@@ -114,10 +110,12 @@ df.loc[qt, "BETA_low_lim"] = df.loc[qt, "BETA"] - df.loc[qt, "SE"]
 
 # Final fixes
 df.loc[:, "Phenotype"] = df.PHENO.apply(
-    lambda x: sr.pheno_search(x, ukb_coding, custom_coding).replace('"', "").strip()
+    lambda x: results.pheno_search(x, ukb_coding, custom_coding)
+    .replace('"', "")
+    .strip()
 )
 df.loc[:, "pval"] = np.power(10, -df["LOG10P"])
-df.loc[:, "pval_stars"] = df["pval"].apply(lambda x: sr.pval_stars(x))
+df.loc[:, "pval_stars"] = df["pval"].apply(lambda x: results.pval_stars(x))
 df.loc[:, "N_pos"] = (2 * df["N"] * df["A1FREQ"]).astype(int)
 df.head()
 

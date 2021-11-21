@@ -21,18 +21,15 @@
 # %%
 from distutils.version import LooseVersion
 from pathlib import Path
-from subprocess import run
+import subprocess
 
 import dxdata
 import dxpy
 import hail as hl
 import pyspark
-import toml
+import tomli
 
-import sys
-
-sys.path.append("..")
-from src.utils import fields_for_id
+from utils import fields_for_id
 
 # %%
 # Initialise Spark
@@ -43,8 +40,8 @@ spark = pyspark.sql.SparkSession(sc)
 # %% tags=["parameters"]
 # Set configurations
 
-with open("../config.toml") as f:
-    conf = toml.load(f)
+with open("../config.toml", "rb") as f:
+    conf = tomli.load(f)
 
 RAW_REL_FILE = conf["SAMPLE_QC"]["UKB_REL_DAT_FILE"]
 FINAL_FILTER_FILE = conf["SAMPLE_QC"]["SAMPLE_FILTER_FILE"]
@@ -171,4 +168,6 @@ final.export("file:" + FILTER_PATH)
 # %%
 # Upload to project
 
-run(["dx", "upload", FILTER_PATH, "--path", PROCESSED_DIR], check=True, shell=False)
+subprocess.run(
+    ["dx", "upload", FILTER_PATH, "--path", PROCESSED_DIR], check=True, shell=False
+)

@@ -20,7 +20,6 @@
 
 # %%
 import subprocess
-import sys
 from datetime import datetime
 from distutils.version import LooseVersion
 from functools import partial
@@ -32,27 +31,19 @@ import dxpy
 import hail as hl
 import pandas as pd
 import pyspark
-import toml
-from src.matrixtables import *
-from src.utils import show_stats
+import tomli
+from matrixtables import *
+from utils import show_stats
 
-module_path = Path("..").resolve().__str__()
-
-if module_path not in sys.path:
-    sys.path.append(module_path)
-
-try:
-    Path("../tmp").resolve().mkdir(parents=True, exists_ok=True)
-except:
-    pass
+Path("../tmp").resolve().mkdir(parents=True, exist_ok=True)
 
 
 hl.plot.output_notebook()
 
 # %% tags=["parameters"]
 # Parameters
-with open("../config.toml") as f:
-    conf = toml.load(f)
+with open("../config.toml", "rb") as f:
+    conf = tomli.load(f)
 
 IMPORT = conf["IMPORT"]
 NAME = conf["NAME"]
