@@ -3,7 +3,7 @@ authors:
     given-names: Jakob
     orcid: "https://orcid.org/0000-0002-2841-7284"
 cff-version: 1.2.0
-message: "If you use this software, please article from preferred-citation"
+message: "If you use this software, please cite the article from preferred-citation"
 preferred-citation:
   authors:
     - family-names: "van der Welden"
