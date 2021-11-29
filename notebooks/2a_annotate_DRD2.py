@@ -101,10 +101,10 @@ stats, intr = get_stats(mt)
 stats.show(-1)
 
 # %%
-intr.export("/tmp/DRD2_QC1.tsv")
+intr.export(f"/tmp/{NAME}_QC1.tsv")
 
 subprocess.run(
-    ["hadoop", "fs", "-get", "/tmp/DRD2_QC1.tsv", "../tmp/DRD2_QC1.tsv"],
+    ["hadoop", "fs", "-get", f"/tmp/{NAME}_QC1.tsv", f"../tmp/{NAME}_QC1.tsv"],
     check=True,
     shell=False,
 )

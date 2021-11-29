@@ -21,7 +21,7 @@ ADD_LABELS = true
 [SAMPLE_QC]
 UKB_REL_DAT_FILE = "Bulk/Genotype Results/Genotype calls/ukb_rel.dat"
 SAMPLE_FILTER_FILE = "samples_to_remove.tsv"
-DATA_DIR = "/mnt/project/data/processed"
+DATA_DIR = "/mnt/project/Data/filters"
 MAX_KINSHIP = 0.088
 MIN_CALL_RATE = 0.95
 MIN_MEAN_DP = 15
@@ -34,7 +34,6 @@ MIN_VAR_GQ = 20
 [ENTRY_QC]
 MIN_DP = 10
 MIN_GQ = 20
-MIN_PL = 20
 
 [EXPORT]
 TMP_DIR = "../tmp"
