@@ -240,11 +240,11 @@ def add_varid(mt: hl.MatrixTable) -> hl.MatrixTable:
     return mt
 
 
-def annotate_mt(mt: hl.MatrixTable, name: str, **kwargs) -> hl.MatrixTable:
-
-    func = getattr(annotations, f"annotate_{name}")
-
-    return func(mt, **kwargs)
+#def annotate_mt(mt: hl.MatrixTable, name: str, **kwargs) -> hl.MatrixTable:
+#
+#    func = getattr(annotations, f"annotate_{name}")
+#
+#    return func(mt, **kwargs)
 
 
 def filter_related_mt(

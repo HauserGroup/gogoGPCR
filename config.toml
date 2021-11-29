@@ -1,8 +1,7 @@
 REFERENCE_GENOME = 'GRCh38'
-NAME = "DRD2"
+NAME = "NONE"
 
 [IMPORT]
-
 MAPPING_FILE = "/mnt/project/data/misc/mappings_with_blocks.tsv"
 INTERVAL_FILE = "/mnt/project/data/misc/xgen_plus_spikein.b38.bed"
 VCF_DIR = "/mnt/project/Bulk/Exome sequences/Population level exome OQFE variants, pVCF format"
@@ -17,7 +16,7 @@ SNV_ONLY = true
 USE_VEP = true
 VEP_JSON = "/mnt/project/data/misc/GRCh38_VEP.json"
 MISSENSE_ONLY = true
-ANNOTATION_DIR = "/mnt/project/annotations/"
+ADD_LABELS = true
 
 [SAMPLE_QC]
 UKB_REL_DAT_FILE = "Bulk/Genotype Results/Genotype calls/ukb_rel.dat"

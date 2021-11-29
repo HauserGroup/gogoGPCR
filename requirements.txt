@@ -1,4 +1,0 @@
-black
-toml
-jupytext
-isort

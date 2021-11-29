@@ -1,7 +1,7 @@
 import pandas as pd
 from pathlib import Path
 import hail as hl
-from typing import List
+from typing import List, Tuple
 
 
 def get_position(gene: str, mapping: pd.DataFrame):
@@ -47,19 +47,17 @@ def are_variants_present(
         print(f"{v}: {mt.aggregate_rows(hl.agg.any(mt[var_col] == v))}")
 
 
-def show_stats(mt):
-    intr = mt.filter_rows((hl.is_defined(mt.annotations)))
+def get_stats(mt: hl.matrixtable.MatrixTable) -> Tuple[hl.table.Table, hl.table.Table]:
+    intr = mt.filter_rows((hl.is_defined(mt.labels)))
     intr = hl.variant_qc(intr)
-    intr = (
-        intr.rows()
-    )  # intr = intr.select_rows(intr.variant_qc, intr.protCons, intr.annotations, intr.annotation).rows()
-    # intr = intr.annotate(**intr.variant_qc)
-    # intr = intr.annotate(**intr.annotations)
-    # intr = intr.drop("variant_qc", "gq_stats", "dp_stats", "annotations")
-    stats = intr.group_by(intr.annotation).aggregate(
-        n_carriers=hl.agg.sum(intr.variant_qc.n_het), n_variants=hl.agg.count()
+    intr = intr.rows() 
+    intr = intr.select(intr.variant_qc, intr.protCons, intr.labels)
+    intr = intr.annotate(**intr.variant_qc)
+    intr = intr.drop("variant_qc", "gq_stats", "dp_stats",)
+    stats = intr.group_by(intr.labels).aggregate(
+        n_carriers=hl.agg.sum(intr.n_het), n_variants=hl.agg.count()
     )
-    return stats
+    return stats, intr
 
 
 def haplotype_carriers(mt: hl.MatrixTable, variants: List[str]) -> int:
