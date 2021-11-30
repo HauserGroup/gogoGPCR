@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.1
+#       jupytext_version: 1.13.2
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -22,8 +22,12 @@ import dxpy
 import pandas as pd
 import pyspark
 from pyspark.sql import functions as F
+from pyspark.conf import SparkConf
 
 # %%
+conf = SparkConf()
+conf.set("autoBroadcastJoinThreshold", -1)
+
 sc = pyspark.SparkContext()
 spark = pyspark.sql.SparkSession(sc)
 
@@ -112,8 +116,8 @@ to_keep.insert(2, to_keep[11])
 to_keep.pop(12)
 to_keep.pop(12)
 
-
 df = df.select(*to_keep)
+
 print(f"Number of columns with at least {min_cases} cases: {len(df.columns)}")
 
 # %%
@@ -124,6 +128,11 @@ print(new_names[:10])
 df = df.toDF(*new_names)
 
 # %%
+df = df.drop(
+    "x130836_0_0", "x130838_0_0", "x130842_0_0"
+)  # these do not converge during Firth correction
+
+# %%
 df.write.csv("/tmp/phenos.csv", sep=",", header=True)
 
 # %%
@@ -131,8 +140,19 @@ subprocess.run(
     ["hadoop", "fs", "-rm", "/tmp/phenos.csv/_SUCCESS"], check=True, shell=False
 )
 subprocess.run(
-    ["hadoop", "fs", "-get", "/tmp/phenos.csv", "phenos.csv"], check=True, shell=False
+    ["hadoop", "fs", "-get", "/tmp/phenos.csv", "../tmp/phenos.csv"],
+    check=True,
+    shell=False,
 )
 
 # %%
-# !sed -e '3,${/^xeid/d' -e '}' phenos.csv/part* > phenos.filtered.csv
+# !sed -e '3,${/^xeid/d' -e '}' ../tmp/phenos.csv/part* > ../tmp/psychiatric.raw.csv
+
+# %%
+# Upload to project
+
+subprocess.run(
+    ["dx", "upload", "../tmp/psychiatric.raw.csv", "--path", "Data/phenotypes/"],
+    check=True,
+    shell=False,
+)

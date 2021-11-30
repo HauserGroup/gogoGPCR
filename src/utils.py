@@ -2,6 +2,7 @@ import pandas as pd
 from pathlib import Path
 import hail as hl
 from typing import List, Tuple
+from distutils.version import LooseVersion
 
 
 def get_position(gene: str, mapping: pd.DataFrame):
@@ -73,7 +74,7 @@ def haplotype_carriers(mt: hl.MatrixTable, variants: List[str]) -> int:
     return num_carriers
 
 
-def fields_for_id(field_id):
+def fields_for_id(field_id, participant):
 
     field_id = str(field_id)
     fields = participant.find_fields(

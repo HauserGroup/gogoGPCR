@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.1
+#       jupytext_version: 1.13.2
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -19,7 +19,6 @@
 # For analysis, we need a cohort of samples with minimal population structure, minimal relatedness and without a few rare sources of error. This notebook generates a list of samples to remove from analysis in order to create such a cohort. We start out by importing stuff, initialising pyspark, setting various parameters from the configuration file, initialising Hail, and loading the participant dataset.
 
 # %%
-from distutils.version import LooseVersion
 from pathlib import Path
 import subprocess
 
@@ -80,7 +79,7 @@ participant = dataset["participant"]
 
 fields = ["22027", "22019", "22006", "22021"]
 field_names = [
-    fields_for_id(id) for id in fields
+    fields_for_id(i, participant) for i in fields
 ]  # fields_for_id("22027") + fields_for_id("22019") + fields_for_id("22006") + fields_for_id("22021")
 field_names = ["eid"] + [field.name for fields in field_names for field in fields]
 
@@ -98,8 +97,8 @@ df.show(5, truncate=False)
 # Use hard filters
 
 df = df.filter(
-    df.p22006.isNull()
-    | (~df.p22027.isNull())
+    # df.p22006.isNull() | regenie should be able to handle population structure
+    (~df.p22027.isNull())
     | (~df.p22019.isNull())
     | (df.p22021 == "Participant excluded from kinship inference process")
     | (df.p22021 == "Ten or more third-degree relatives identified")
