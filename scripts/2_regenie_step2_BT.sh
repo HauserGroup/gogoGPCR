@@ -24,11 +24,11 @@ regenie \
   --mask-def ${data_file_dir}/burden/${gene}.masks \
   --check-burden-files \
   --out step2_BT_${phenotype}_${gene} \
-  --maxstep-null 1 \
-  --maxiter-null 25000 \
+  #--maxstep-null 1 \
+  #--maxiter-null 25000 \
   --write-samples \
   --print-pheno \
-  --no-split \
+  --af-cc \
   --verbose
 "
 
