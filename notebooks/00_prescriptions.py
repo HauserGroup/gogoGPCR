@@ -14,16 +14,36 @@
 # ---
 
 # %%
+# IMPORTS
 import re
-import subprocess
 
 import dxdata
 import dxpy
 import pyspark
+from pprint import pprint
 
+import tomli
+import hail as hl
+from pathlib import Path
+from pyspark.sql.types import StringType
+import subprocess
+
+# SET LOGFILE
+
+with open("../config.toml", "rb") as f:
+    conf = tomli.load(f)
+
+    LOG_FILE = Path(conf["IMPORT"]["LOG_DIR"], f"prescriptions.log").resolve().__str__()
+
+
+# INIT SPARK
 sc = pyspark.SparkContext()
 spark = pyspark.sql.SparkSession(sc)
 
+# INIT HAIL
+hl.init(sc=sc, default_reference="GRCh38", log=LOG_FILE)
+
+# DISPENSE DATASET
 dispensed_database_name = dxpy.find_one_data_object(
     classname="database", name="app*", folder="/", name_mode="glob", describe=True
 )["describe"]["name"]
@@ -39,12 +59,53 @@ scripts = dataset["gp_scripts"]
 field_names = [field.name for field in scripts.fields]
 df = scripts.retrieve_fields(names=field_names, engine=dxdata.connect())
 
-# %%
-df.show(10, truncate=False)
+# MAKE TMPDIR
+
+Path("../tmp").resolve().mkdir(parents=True, exist_ok=True)
 
 # %%
-df = spark.sql(
-    "SELECT * FROM gp_scripts WHERE bnf_code IS NOT NULL AND LENGTH(bnf_code) = 14"
+df = df.withColumn("issue_date", df.issue_date.cast(StringType()))
+
+# %%
+ht = hl.Table.from_spark(df, key=["eid"])
+
+# %%
+ids = hl.import_table(
+    "file://" + "/mnt/project/Data/schizophrenia/Participant_table.csv",
+    delimiter=",",
+    impute=True,
+    key="Participant ID",
+    types={"Participant ID": "str"},
 )
-print(f"Rows with valid BNF codes: {df.count()}")
-df.show(10, truncate=False)
+
+# %%
+ht = ht.semi_join(ids)
+ht = ht.annotate(**ids[ht.eid])
+ht.show()
+
+# %%
+total = ht.count()
+patients = ht.group_by("eid").aggregate(eids=hl.agg.count()).count()
+pprint(f"Total number of prescriptions: {total} from {patients} unique patients")
+
+# %%
+write_path = "/tmp/schizophrenia_prescriptions.tsv.bgz"
+ht.export(write_path)
+
+# %%
+subprocess.run(
+    ["hadoop", "fs", "-get", write_path, f"..{write_path}"], check=True, shell=False
+)
+
+# %%
+subprocess.run(
+    [
+        "dx",
+        "upload",
+        f"..{write_path}",
+        "--path",
+        "Data/schizophrenia/schizophrenia_prescriptions.tsv.bgz",
+    ],
+    check=True,
+    shell=False,
+)
