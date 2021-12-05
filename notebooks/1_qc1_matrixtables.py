@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.2
+#       jupytext_version: 1.13.3
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -33,7 +33,7 @@ import pandas as pd
 import pyspark
 import tomli
 from matrixtables import *
-from utils import show_stats
+from utils import get_stats
 
 Path("../tmp").resolve().mkdir(parents=True, exist_ok=True)
 
@@ -74,9 +74,6 @@ USE_VEP = conf["ANNOTATE"]["USE_VEP"]
 MISSENSE_ONLY = conf["ANNOTATE"]["MISSENSE_ONLY"]
 
 VEP_JSON = Path(conf["ANNOTATE"]["VEP_JSON"]).resolve().__str__()
-
-ANNOTATION_DIR = conf["ANNOTATE"]["ANNOTATION_DIR"]
-
 
 TMP_DIR = conf["EXPORT"]["TMP_DIR"]
 
@@ -161,3 +158,5 @@ STAGE = "QC1"
 WRITE_PATH = "dnax://" + mt_database + f"/{NAME}.{STAGE}.mt"
 
 mt.write(WRITE_PATH, overwrite=True)
+
+# %%
