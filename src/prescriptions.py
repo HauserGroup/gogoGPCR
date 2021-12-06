@@ -1,97 +1,9 @@
-# ---
-# jupyter:
-#   jupytext:
-#     formats: ipynb,py:percent
-#     text_representation:
-#       extension: .py
-#       format_name: percent
-#       format_version: '1.3'
-#       jupytext_version: 1.13.2
-#   kernelspec:
-#     display_name: Python [default]
-#     language: python
-#     name: python3
-# ---
-
-# %% [markdown]
-# # UKBB Prescription Data
-
-# %% [markdown]
-# ## Load Packages
-
-# %%
-# Import packages
-import os
-import pandas as pd
-import numpy as np
-import hail as hl
-import re
-
-import datetime
-from hail.plot import show
-from pprint import pprint
-import scipy
-import statistics as st
-
-hl.init()
-hl.plot.output_notebook()
-
+# All Konrad J. Karczewski code for inspiration. Nothing here is currently in use.
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 import pandas as pd
 import re
 import pickle
-
-import matplotlib.pyplot as plt
-import numpy as np
-from matplotlib import colors
-from matplotlib.ticker import PercentFormatter
-
-# %% [markdown]
-# ## Import Data into Hail
-
-# %%
-"""
-Field names are originally from Courtney's pandas code
-"""
-
-raw_data_loc = "gs://ukb31063/ukb31063.gp_scripts.20191008.txt"
-# fs = [f"f{i}" for i in range(0, 8)]
-# fields = ['eid','data_provider','issue_date','read_v2','bnf','dmd','drug_name','drug_quantity']
-hl_presc = hl.import_table(raw_data_loc, no_header=False, delimiter="\t", impute=True)
-
-drug_counts = hl_presc.group_by(hl_presc.drug_name).aggregate(counts=hl.agg.count())
-drug_counts.show()
-
-# %% [markdown]
-# ## Export Drugs with >10k, >1k, and 100 Counts
-
-# %%
-# For the initial curation task, I restricted to the ~700 scripts
-# that had >10,000 instances
-top_drugs_10k = drug_counts.filter(drug_counts.counts > 10000)
-top_drugs_10k.export("gs://gsarma/top_drugs_10k.tsv")
-
-# Drugs that have >1000 scripts likely cover what we
-# might want for future studies. An efficient way to bootstrap
-# from the manually curated list of ~700 to the ~3500 in this
-# larger list is a significant step.
-top_drugs_1k = drug_counts.filter(drug_counts.counts > 1000)
-top_drugs_1k.export("gs://gsarma/top_drugs_1k.tsv")
-
-# %% [markdown]
-# # Pre-curation Steps
-
-# %%
-"""
-This is the first step of the curation process, simply split on the first non-word character
-(most often a whitespace), and extract the first token. This is typically the generic name, 
-but each drug needs to be looked at and potentially corrected.  
-
-I found that this part was faster to do in pandas than with Hail, largely because of the
-availability of questions on StackExchange. 
-"""
-
 
 def fill_possible_generic(dfname):
     """
@@ -245,59 +157,6 @@ def pre_curation(dfname):
     """
     return fill_dosages(fill_delivery_system(fill_possible_generic(dfname)))
 
-
-# %%
-td10k = pd.read_csv("/Users/gsarma/Dropbox/Broad/UKBB/top_drugs_10k.tsv", sep="\t")
-td1k = pd.read_csv("/Users/gsarma/Dropbox/Broad/UKBB/top_drugs_1k.tsv", sep="\t")
-curated = pd.read_csv(
-    "/Users/gsarma/git/UKBB_prescriptions/UKBB_prescriptions_v2.csv", sep=","
-)
-
-td1ka = pre_curation(td1k)
-
-# %%
-pre_curation(td10k)
-
-# %% [markdown]
-# # Bootstrapping From Curated Entries
-
-# %%
-top_drugs = pd.read_csv("/Users/gsarma/Dropbox/Broad/UKBB/top_drugs_1k.tsv", sep="\t")
-top_drugs = top_drugs.drop(0)
-top_drugs = top_drugs.sort_values(by="counts", ascending=False)
-last = len(top_drugs.index) - 1
-
-# %%
-all_dist = []
-for n in range(round(last / 2)):
-    base = top_drugs.iloc[
-        last - n
-    ].drug_name  # Start at the end and work to the half-way point
-    temp_dist = []
-    for k in range(round(last / 2)):
-        l_dist = fuzz.token_sort_ratio(base, top_drugs.iloc[k].drug_name)
-        # Start at the *beginning* and work to the half-way point
-        temp_dist.append(l_dist)
-    m = max(temp_dist)
-    # First find all the indices where a maximum happens and take the minimum
-    all_dist.append(min([i for i, j in enumerate(temp_dist) if j == m]))
-
-# %%
-plt.hist(all_dist, bins=100)
-
-# %%
-check_quality = []
-for n in range(0, 1700, 100):
-    check_quality.append(
-        [top_drugs.iloc[last - n].drug_name, top_drugs.iloc[all_dist[n]].drug_name]
-    )
-
-# %%
-qc_df = pd.DataFrame(check_quality)
-qc_df
-
-
-# %%
 def find_best_match(raw_script, reference):
     """
     Find the best match for a prescription string starting
@@ -331,31 +190,3 @@ def bootstrap_curation(new_df, reference):
         candidate_category.append(best_match[1])
 
     return [candidate_generic, candidate_category]
-
-
-# %%
-print(bootstrap_curation.__doc__)
-
-# %%
-short_df = td1ka.sample(n=20)
-new_columns = bootstrap_curation(short_df, curated)
-short_df["possible_generic"] = new_columns[0]
-short_df["Drug_Category_and_Indication"] = new_columns[1]
-
-# %%
-short_df
-
-# %% [markdown]
-# # Some Basic Data Exploration
-
-# %%
-plt.hist(top_drugs.drug_name.str.len())
-plt.xlabel("Prescription String Legnth")
-plt.ylabel("Frequency")
-plt.legend()
-plt.show()
-
-# %%
-td1ka
-
-# %%
