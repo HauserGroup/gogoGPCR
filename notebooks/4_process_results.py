@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.2
+#       jupytext_version: 1.13.3
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -18,6 +18,7 @@
 import os
 import sys
 from pathlib import Path
+from tqdm.notebook import trange, tqdm
 
 import dxdata
 import dxpy
@@ -32,8 +33,9 @@ import results
 
 # %%
 # Flags
-GENE = "DRD2"
-TRAIT = "QT"
+GENE = "MC4R"
+TRAIT = "BT"
+PHENOTYPE = "metabolic"
 
 # %%
 # sc = pyspark.SparkContext()
@@ -42,8 +44,9 @@ TRAIT = "QT"
 # %%
 # Results files
 files = [
-    f"file:/mnt/project/data/results/{GENE}/{file}"
-    for file in os.listdir(f"/mnt/project/data/results/{GENE}")
+    f"file:/mnt/project/Data/results/{PHENOTYPE}.{TRAIT}/{file}"
+    for file in os.listdir(f"/mnt/project/Data/results/{PHENOTYPE}.{TRAIT}")
+    if file.endswith(".regenie")
 ]
 
 # Field codings
@@ -77,6 +80,9 @@ df_raw = pd.concat(
 )
 
 # %%
+df_raw
+
+# %%
 # Fix common fields
 df = df_raw
 df.loc[:, "GENE"] = df.ID.apply(lambda x: x.split(".")[0])
@@ -86,7 +92,7 @@ df.loc[:, "AAF"] = df.ALLELE1.apply(lambda x: x.split(".", maxsplit=1)[-1])
 df.loc[:, "FILE"] = df.SOURCE.apply(
     lambda x: x.split("/")[-1].split("\.")[0].split("_", maxsplit=4)[2:]
 )
-df.loc[:, "TRAIT"] = df.FILE.apply(lambda x: x[0])
+df.loc[:, "TRAIT"] = TRAIT  # df.FILE.apply(lambda x: x[0])
 df.loc[:, "PHENO"] = df.FILE.apply(lambda x: x[-1].split(".")[0])
 df = df.drop(["ID", "ALLELE0", "ALLELE1", "EXTRA", "SOURCE", "FILE", "TEST"], axis=1)
 
@@ -118,31 +124,33 @@ df.loc[:, "Phenotype"] = df.PHENO.apply(
 df.loc[:, "pval"] = np.power(10, -df["LOG10P"])
 df.loc[:, "pval_stars"] = df["pval"].apply(lambda x: results.pval_stars(x))
 df.loc[:, "N_pos"] = (2 * df["N"] * df["A1FREQ"]).astype(int)
+
+# Singletons
+df = df.loc[df.AAF != "singleton", :]
+print(len(df))
 df.head()
 
 # %%
-phenos_to_remove = [
-    "Severe obesity",
-    "Date E66 first reported (obesity)",
-    "Date I10 first reported (essential (primary) hypertension)",
-    "Myocardial disease incl. angina pectoris",
-    "Pulse rate, automated reading",
-    "Heart attack diagnosed by doctor",
-    "Angina diagnosed by doctor",
-    "Fracture resulting from simple fall",
-    "Stroke diagnosed by doctor",
-    "Cholesterol medication",
-]
-
+df.Phenotype.unique()
 
 # %%
+phenos_to_remove = ["Date I10 first reported (essential (primary) hypertension)"]
+
 plt_df = (
     df.loc[(df.GENE == GENE)]
-    .sort_values(by=["Phenotype", "AAF"], ascending=[True, False])
+    .sort_values(by=["Phenotype", "AAF"], ascending=[True, False])  # , "AAF"
     .groupby(["Phenotype", "MASK"])
     .first()
     .reset_index()
 )
+
+pmax = 0.1
+OR_max = 20
+interesting = plt_df.groupby("Phenotype").pval.agg("min").le(pmax) & plt_df.groupby(
+    "Phenotype"
+).OR.agg("max").le(OR_max)
+interesting = list(interesting.loc[interesting].index)
+plt_df = plt_df.loc[plt_df.Phenotype.isin(interesting), :]
 
 
 plt_df = plt_df.loc[~plt_df.Phenotype.astype(str).isin(phenos_to_remove), :]
@@ -172,7 +180,16 @@ plt_df.head()
 
 # %%
 def plot_BT(
-    df, width=4, height=12, phenotypes=None, masks=None, lw=1.3, ms=10, fudge=0.6
+    df,
+    width=4,
+    height=12,
+    phenotypes=None,
+    masks=None,
+    lw=1.3,
+    ms=10,
+    fudge=0.6,
+    xlim=[0, 12],
+    title=None,
 ):
 
     df = df.loc[df.TRAIT == "BT", :]
@@ -193,6 +210,8 @@ def plot_BT(
         + df.loc[:, "CI"].str.ljust(just["CI"])
         + "p= "
         + df.loc[:, "pval"].apply(lambda p: f"{p:.2e}").str.ljust(4)
+        + " "
+        + df.loc[:, "pval_stars"].str.ljust(4)
     )
 
     if phenotypes is None:
@@ -211,14 +230,14 @@ def plot_BT(
         for color, mask in zip(colors, masks)
     ]
 
-    for i, ax in enumerate(axes):
+    for i, ax in tqdm(enumerate(axes)):
 
         temp = df.loc[df.Phenotype.eq(phenotypes[i]), :]
         temp = temp.loc[df.MASK.isin(masks)]
 
-        for mask, color in zip(
-            masks,
+        for color, mask in zip(
             colors,
+            masks,
         ):
             temp1 = temp.loc[temp.MASK == mask, :]
             xerr = [temp1["OR_low_lim"].values, temp1["OR_up_lim"].values]
@@ -236,14 +255,16 @@ def plot_BT(
                 mec="black",
                 elinewidth=lw,
             )
-
+        print(temp.label)
         ax0 = ax.twinx()
         ax0.yaxis.tick_left()
         ax.yaxis.tick_right()
-        ax.set_ylim(temp.index[0] - fudge, temp.index[1] + fudge)
-        ax.set_yticks([temp.index[0], temp.index[1]])
-        ax.set_xlim(0 - fudge, df.OR_up.max() + fudge)
-        ax.set_xticks(np.arange(0, int(df.OR_up.max()) + 2, 1))
+        ax.set_ylim(temp.index[0] - fudge, temp.index[-1] + fudge)
+        ax.set_yticks(temp.index)
+        # ax.set_xlim(0 - fudge, df.OR_up.max() + fudge)
+        ax.set_xlim(xlim[0] - fudge, xlim[1] + fudge)
+        # ax.set_xticks(np.arange(0, int(df.OR_up.max()) + 2, 1))
+        ax.set_xticks(np.arange(0, 13 + 2, 1))
 
         ax.set_yticklabels(temp.label, fontsize=9, fontdict={"family": "monospace"})
 
@@ -280,12 +301,23 @@ def plot_BT(
         if i == len(phenotypes) - 1:
             ax.set_xlabel("OR")
             ax.tick_params(bottom=True)
-            ax.legend(handles=legend_elements, loc="lower right")
+            ax.legend(handles=legend_elements[::-1], loc="lower right")
 
-    return temp
+    if title:
+        fig.suptitle(title)
+    plt.subplots_adjust(right=1)
+
+    return fig
 
 
-temp = plot_BT(plt_df)
+plot = plot_BT(plt_df, title="MC4R Binary traits")
+
+plt.savefig(
+    f"/opt/notebooks/gogoGPCR/tmp/{GENE}_{TRAIT}_new.svg",
+    dpi=600,
+    bbox_inches="tight",
+    format="svg",
+)
 
 
 # %%
@@ -444,7 +476,12 @@ for ax in axes.flat:
 plt.subplots_adjust(right=1)
 # fig.suptitle(title)
 
-# plt.savefig(f"/opt/notebooks/gogoGPCR/tmp/{GENE}_{TRAIT}_new.svg", dpi = 600, bbox_inches="tight", format = "svg")
+plt.savefig(
+    f"/opt/notebooks/gogoGPCR/tmp/{GENE}_{TRAIT}_new.svg",
+    dpi=600,
+    bbox_inches="tight",
+    format="svg",
+)
 plt.show()
 
 # %%

@@ -23,17 +23,19 @@
 
 
 #output directory - this should also be where the files in 02-step1-qc-filter.sh end up
+PHENOTYPE=$1
+TRAIT="QT"
 data_file_dir="/Data/step1"
 pheno_file_dir="/Data/phenotypes"
 
-run_regenie_step1="regenie \
- --step 1 --bt \
- --out psychiatric_step1_BT \
+run_regenie_step1="
+regenie \
+ --step 1\
+ --out ${PHENOTYPE}.step1.${TRAIT} \
  --bed ukb_allChrs.GRCh38 \
- --phenoFile psychiatric.tsv --covarFile covariates.tsv \
+ --phenoFile ${PHENOTYPE}.final.tsv --covarFile covariates.tsv \
  --extract WES_qc_pass.snplist --keep WES_qc_pass.id \
  --bsize 1000 \
- --write-null-firth \
  --lowmem --lowmem-prefix tmp_preds \
  --verbose --threads 16"
 
@@ -44,4 +46,4 @@ dx run swiss-army-knife -iin="${data_file_dir}/ukb_allChrs.GRCh38.bed" \
    -icmd="${run_regenie_step1}" \
    --tag="Step1" \
    --instance-type "mem1_ssd1_v2_x16" \
-   --destination="${project}:/Data/step1/psychiatric.LOCO/" --brief --yes
+   --destination="${project}:/Data/step1/${PHENOTYPE}.${TRAIT}.LOCO/" --brief --yes

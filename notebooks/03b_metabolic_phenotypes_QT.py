@@ -1,12 +1,11 @@
 # ---
 # jupyter:
 #   jupytext:
-#     formats: ipynb,py:percent
 #     text_representation:
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.2
+#       jupytext_version: 1.13.3
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -21,8 +20,16 @@ import dxdata
 import dxpy
 import pandas as pd
 import pyspark
+
 from pyspark.sql import functions as F
 from pyspark.conf import SparkConf
+from pyspark.sql.types import StringType
+
+from pathlib import Path
+
+Path("../tmp").resolve().mkdir(parents=True, exist_ok=True)
+
+trait = "metabolic"
 
 # %%
 conf = SparkConf()
@@ -60,6 +67,7 @@ def get_columns_to_keep(df, threshold=200) -> list:
     return to_keep
 
 
+# %%
 def new_names(s: str) -> str:
     """
     Fixes a column header for PHESANT use
@@ -74,85 +82,70 @@ def new_names(s: str) -> str:
 
 
 # %%
-first_occurences = list(
-    participant.find_fields(
-        lambda f: bool(re.match("^Date [F]\d{2} first reported", f.title))
-    )
-)
-
 age_sex = "|".join(["31", "21022"])
 age_sex_fields = list(
     participant.find_fields(lambda f: bool(re.match(f"^p({age_sex})$", f.name)))
 )
 
-psych = "|".join(
+# %%
+metabolic = "|".join(
     [
-        "2090",
-        "2100",
-        "20126",
+        "21002",
+        "50",
+        "48",
+        "21001",
+        "23099",
+        "23127",
+        "102",
+        "4080",
+        "4079",
     ]
 )
 
-psych_fields = list(
-    participant.find_fields(lambda f: bool(re.match(f"^p({psych})\D", f.name)))
+metabolic_fields = list(
+    participant.find_fields(lambda f: bool(re.match(f"^p({metabolic})\D", f.name)))
 )
 
 field_names = (
     ["eid"]
     + [f.name for f in age_sex_fields]
-    + [f.name for f in first_occurences]
-    + [f.name for f in psych_fields]
+    + [f.name for f in metabolic_fields]
 )
 df = participant.retrieve_fields(names=field_names, engine=dxdata.connect())
 
 # %%
-min_cases = 500
-
-print(f"Number of columns: {len(df.columns)}")
-to_keep = get_columns_to_keep(df, min_cases)
-
-to_keep.insert(1, to_keep[11])
-to_keep.insert(2, to_keep[11])
-to_keep.pop(12)
-to_keep.pop(12)
-
-df = df.select(*to_keep)
-
-print(f"Number of columns with at least {min_cases} cases: {len(df.columns)}")
+to_drop = [x for x in df.columns if "a1" in x]
+df = df.drop(*to_drop)
+colnames = [re.sub("_a\d", "", x) for x in df.columns]
+colnames = ['xeid'] + [new_names(s) for s in colnames[1:]]
+print(colnames[:10])
 
 # %%
-new_names = ["xeid"] + [new_names(s) for s in df.columns[1:]]
-print(new_names[:10])
+df = df.toDF(*colnames)
 
 # %%
-df = df.toDF(*new_names)
-
-# %%
-df = df.drop(
-    "x130836_0_0", "x130838_0_0", "x130842_0_0"
-)  # these do not converge during Firth correction
-
-# %%
-df.write.csv("/tmp/phenos.csv", sep=",", header=True)
+df.write.csv("/tmp/phenos.tsv", sep="\t", header=True, emptyValue='NA')
 
 # %%
 subprocess.run(
-    ["hadoop", "fs", "-rm", "/tmp/phenos.csv/_SUCCESS"], check=True, shell=False
+    ["hadoop", "fs", "-rm", "/tmp/phenos.tsv/_SUCCESS"], check=True, shell=False
 )
 subprocess.run(
-    ["hadoop", "fs", "-get", "/tmp/phenos.csv", "../tmp/phenos.csv"],
+    ["hadoop", "fs", "-get", "/tmp/phenos.tsv", "../tmp/phenos.tsv"],
     check=True,
     shell=False,
 )
 
 # %%
-# !sed -e '3,${/^xeid/d' -e '}' ../tmp/phenos.csv/part* > ../tmp/psychiatric.raw.csv
+# !sed -e '3,${/^xeid/d' -e '}' ../tmp/phenos.tsv/part* > ../tmp/metabolic.QT.raw.tsv
 
 # %%
 # Upload to project
 
 subprocess.run(
-    ["dx", "upload", "../tmp/psychiatric.raw.csv", "--path", "Data/phenotypes/"],
+    ["dx", "upload", "../tmp/metabolic.QT.raw.tsv", "--path", "Data/phenotypes/"],
     check=True,
     shell=False,
 )
+
+# %%

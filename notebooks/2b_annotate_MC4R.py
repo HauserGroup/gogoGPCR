@@ -71,30 +71,15 @@ v, s = mt.count()
 pprint(f"{v} variants and {s} samples after reading matrixtable")
 
 # %%
-ht = hl.import_table("file:" + "/mnt/project/data/annotations/DRD2.tsv", impute=True).key_by("AA consequence")
+ht = hl.import_table("file:" + "/mnt/project/Data/annotations/MC4R.tsv", impute=True, quote = '"')
+ht = ht.annotate(Variants = ht.Variants.strip())
+ht = ht.key_by("Variants")
 
 # %%
-mt = mt.annotate_rows(annotations=ht[mt.protCons])
+ht.show()
 
 # %%
-mt = mt.annotate_rows(
-        Gi1=mt.annotations.number_of_impairments_Gi1 > 0,
-        GoA=mt.annotations.number_of_impairments_GoA > 0,
-        Gz=mt.annotations.number_of_impairments_Gz > 0,
-    )
-
-mt = mt.annotate_rows(
-    labels=hl.case()
-    .when(~mt.Gi1 & ~mt.GoA & ~mt.Gz, "WT")
-    .when(mt.Gi1 & ~mt.GoA & ~mt.Gz, "Gi1")
-    .when(~mt.Gi1 & mt.GoA & ~mt.Gz, "GoA")
-    .when(~mt.Gi1 & ~mt.GoA & mt.Gz, "Gz")
-    .when(mt.Gi1 & mt.GoA & ~mt.Gz, "Gi1_GoA")
-    .when(mt.Gi1 & ~mt.GoA & mt.Gz, "Gi1_Gz")
-    .when(~mt.Gi1 & mt.GoA & mt.Gz, "GoA_Gz")
-    .when(mt.Gi1 & mt.GoA & mt.Gz, "Gi1_GoA_Gz")
-    .or_missing()
-)
+mt = mt.annotate_rows(labels = ht[mt.protCons].Category)
 
 # %%
 stats, intr = get_stats(mt)
@@ -114,3 +99,5 @@ STAGE = "LABELLED"
 WRITE_PATH = "dnax://" + mt_database + f"/{NAME}.{STAGE}.mt"
 
 mt.write(WRITE_PATH, overwrite = True)
+
+# %%

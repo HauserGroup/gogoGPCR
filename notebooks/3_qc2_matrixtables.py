@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.2
+#       jupytext_version: 1.13.3
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -120,6 +120,10 @@ pprint(f"Samples remaining after hard filtering samples: {mt.count_cols()} ")
 
 # %%
 # Sample QC
+# May need adjustment if too many samples are removed by default settings
+#MIN_MEAN_DP = 15
+#MIN_MEAN_GQ = 48.5
+
 mt = sample_QC_mt(mt, MIN_CALL_RATE, MIN_MEAN_DP, MIN_MEAN_GQ)
 
 pprint(f"Samples remaining after QC: {mt.count_cols()} ")
@@ -207,3 +211,5 @@ subprocess.run(
     check=True,
     shell=False,
 )
+
+# %%
