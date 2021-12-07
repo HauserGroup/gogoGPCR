@@ -6,8 +6,7 @@ phenotype=$2
 data_file_dir="/mnt/project/Data"
 
 run_regenie_step2="
-sed -i 's|/home/dnanexus/out/out/|${data_file_dir}/step1/${phenotype}.QT/|' ${phenotype}_step1_QT_pred.list &&
-sed -i 's|/home/dnanexus/out/out/|${data_file_dir}/step1/${phenotype}.QT/|' ${phenotype}_step1_QT_firth.list && 
+#sed -i 's|/home/dnanexus/out/out/|${data_file_dir}/step1/${phenotype}.QT/|' ${phenotype}_step1_QT_pred.list &&
 regenie \
   --step 2 \
   --qt \
@@ -33,6 +32,5 @@ regenie \
 "
 
 dx run swiss-army-knife -iin="/Data/step1/${phenotype}.QT/${phenotype}_step1_QT_pred.list" \
-   -iin="/Data/step1/${phenotype}.QT/${phenotype}_step1_QT_firth.list" \
-   -icmd="${run_regenie_step2}" --tag="Step1" --instance-type "mem1_ssd1_v2_x16"\
-   --destination="/Data/results/" --yes;
+   -icmd="${run_regenie_step2}" --tag="Step2" --instance-type "mem1_ssd1_v2_x16"\
+   --destination="/Data/results/metabolic.QT" --yes;

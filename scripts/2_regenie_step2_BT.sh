@@ -37,4 +37,4 @@ regenie \
 dx run swiss-army-knife -iin="/Data/step1/${phenotype}.BT/${phenotype}_step1_BT_pred.list" \
    -iin="/Data/step1/${phenotype}.BT/${phenotype}_step1_BT_firth.list" \
    -icmd="${run_regenie_step2}" --tag="Step1" --instance-type "mem1_ssd1_v2_x16"\
-   --destination="/Data/results/" --yes;
+   --destination="/Data/results/${phenotype}.BT" --yes;

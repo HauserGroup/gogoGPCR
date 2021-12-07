@@ -23,7 +23,7 @@ UKB_REL_DAT_FILE = "Bulk/Genotype Results/Genotype calls/ukb_rel.dat"
 SAMPLE_FILTER_FILE = "samples_to_remove.tsv"
 DATA_DIR = "/mnt/project/Data/filters"
 MAX_KINSHIP = 0.088
-MIN_CALL_RATE = 0.95
+MIN_CALL_RATE = 0.97
 MIN_MEAN_DP = 15
 MIN_MEAN_GQ = 50
 
