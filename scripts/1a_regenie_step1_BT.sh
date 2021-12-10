@@ -28,7 +28,7 @@ step1_file_dir="/mnt/project/Data/step1"
 pheno_file_dir="/mnt/project/Data/phenotypes"
 data_file_dir="Data/step1"
 
-prompt="Enter phenotype for Step 1 (PHENOTYPE.${TRAIT}.final.tsv must exist and contain only binary phenotypes)"
+prompt="Enter phenotype for Step 1 (PHENOTYPE.${TRAIT}.final.tsv must exist and contain only binary phenotypes):   "
 read -p "$prompt" PHENOTYPE 
 
 run_regenie_step1="

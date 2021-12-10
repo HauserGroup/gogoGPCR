@@ -3,7 +3,7 @@
 TRAIT="BT"
 data_file_dir="/mnt/project/Data"
 
-prompt="Enter GENE and PHENOTYPE for Step 2 (GENE burden files, PHENOTYPE .tsv file, and PHENOTYPE.${TRAIT}.LOCO/FIRTH files must exist)"
+prompt="Enter GENE and PHENOTYPE for Step 2 (GENE burden files, PHENOTYPE .tsv file, and PHENOTYPE.${TRAIT}.LOCO/FIRTH files must exist):   "
 read -p "$prompt" GENE PHENOTYPE 
 
 run_regenie_step2="
@@ -35,6 +35,6 @@ regenie \
 "
 
 dx run swiss-army-knife -iin="/Data/step1/${PHENOTYPE}.${TRAIT}.LOCO/${PHENOTYPE}.${TRAIT}.step1_pred.list" \
-   -iin="/Data/step1/${PHENOTYPE}.${TRAIT}.LOCO/${PHENOTYPE}.${TRAIT}.step1_pred.list" \
-   -icmd="${run_regenie_step2}" --tag="Step1" --instance-type "mem1_ssd1_v2_x16"\
+   -iin="/Data/step1/${PHENOTYPE}.${TRAIT}.LOCO/${PHENOTYPE}.${TRAIT}.step1_firth.list" \
+   -icmd="${run_regenie_step2}" --tag="Step2" --instance-type "mem1_ssd1_v2_x16"\
    --destination="/Data/results/${PHENOTYPE}.${TRAIT}.${GENE}" --yes;

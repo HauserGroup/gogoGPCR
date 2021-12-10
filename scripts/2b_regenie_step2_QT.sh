@@ -3,11 +3,11 @@
 TRAIT="QT"
 data_file_dir="/mnt/project/Data"
 
-prompt="Enter GENE and PHENOTYPE for Step 2 (GENE burden files, PHENOTYPE .tsv file, and PHENOTYPE.${TRAIT}.LOCO files must exist)"
+prompt="Enter GENE and PHENOTYPE for Step 2 (GENE burden files, PHENOTYPE .tsv file, and PHENOTYPE.${TRAIT}.LOCO files must exist):   "
 read -p "$prompt" GENE PHENOTYPE 
 
 run_regenie_step2="
-#sed -i 's|/home/dnanexus/out/out/|${data_file_dir}/step1/${PHENOTYPE}.${TRAIT}.LOCO/|' ${PHENOTYPE}.${TRAIT}.step1_pred.list &&
+sed -i 's|/home/dnanexus/out/out/|${data_file_dir}/step1/${PHENOTYPE}.${TRAIT}.LOCO/|' ${PHENOTYPE}.${TRAIT}.step1_pred.list &&
 regenie \
   --step 2 \
   --qt \
@@ -30,6 +30,6 @@ regenie \
   --verbose
 "
 
-dx run swiss-army-knife -iin="/Data/step1/${PHENOTYPE}.${TRAIT}/${PHENOTYPE}.${TRAIT}.step1_pred.list" \
+dx run swiss-army-knife -iin="/Data/step1/${PHENOTYPE}.${TRAIT}.LOCO/${PHENOTYPE}.${TRAIT}.step1_pred.list" \
    -icmd="${run_regenie_step2}" --tag="Step2" --instance-type "mem1_ssd1_v2_x16"\
    --destination="/Data/results/${PHENOTYPE}.${TRAIT}.${GENE}" --yes;
