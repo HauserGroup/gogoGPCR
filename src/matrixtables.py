@@ -206,31 +206,45 @@ def variant_QC_mt(
     if MIN_GQ is not None:
         mt = mt.filter_rows(mt.variant_qc.gq_stats.mean >= MIN_GQ)
 
-    mt = mt.filter_rows(
-        (mt.variant_qc.AF[0] > 0.0) & (mt.variant_qc.AF[0] < 1.0)
-    )
+    mt = mt.filter_rows((mt.variant_qc.AF[0] > 0.0) & (mt.variant_qc.AF[0] < 1.0))
 
     return mt
 
 
 def genotype_filter_mt(
     mt: hl.matrixtable.MatrixTable,
-    MIN_DP: Union[float, int, None],
-    MIN_GQ: Union[float, int, None],
-    log_entries_filtered: True,
+    MIN_DP: Union[float, int, None] = 10,
+    MIN_GQ: Union[float, int, None] = 20,
+    log_entries_filtered=True,
 ) -> hl.matrixtable.MatrixTable:
+    """[summary]
 
+    Parameters
+    ----------
+    mt : hl.matrixtable.MatrixTable
+        Input MT
+    MIN_DP : Union[float, int, None], optional
+        Minimum depth, lax default, by default 10
+    MIN_GQ : Union[float, int, None], optional
+        Minimum quality, lax default, by default 20
+    log_entries_filtered : bool, optional
+        whether to run compute_entry_filter_stats(), by default True
+
+    Returns
+    -------
+    hl.matrixtable.MatrixTable
+        MT with genotype QC
+    """
     mt = mt.annotate_entries(AB=(mt.AD[1] / hl.sum(mt.AD)))
 
     # set filter condition for AB
+
     filter_condition_ab = (
         (mt.GT.is_hom_ref() & (mt.AB <= 0.1))
         | (mt.GT.is_het() & (mt.AB >= 0.25) & (mt.AB <= 0.75))
         | (mt.GT.is_hom_var() & (mt.AB >= 0.9))
     )
-    fraction_filtered = mt.aggregate_entries(
-        hl.agg.fraction(~filter_condition_ab)
-    )
+    fraction_filtered = mt.aggregate_entries(hl.agg.fraction(~filter_condition_ab))
 
     print(
         f"Filtering {fraction_filtered * 100:.2f}% entries out of downstream"
@@ -254,17 +268,17 @@ def genotype_filter_mt(
 
 
 def add_varid(mt: hl.MatrixTable) -> hl.MatrixTable:
-    """Annotate rows with varid
+    """Annotate rows with varid for export_bgen
 
     Parameters
     ----------
     mt : hl.MatrixTable
-        [description]
+        MT
 
     Returns
     -------
     hl.MatrixTable
-        [description]
+        MT with varid row field
     """
 
     mt = mt.annotate_rows(
@@ -282,6 +296,7 @@ def add_varid(mt: hl.MatrixTable) -> hl.MatrixTable:
     return mt
 
 
+# DEPRECATED
 # def annotate_mt(mt: hl.MatrixTable, name: str, **kwargs) -> hl.MatrixTable:
 #
 #    func = getattr(annotations, f"annotate_{name}")
@@ -289,58 +304,20 @@ def add_varid(mt: hl.MatrixTable) -> hl.MatrixTable:
 #    return func(mt, **kwargs)
 
 
-def filter_related_mt(
-    mt: hl.MatrixTable, rel_file: str, max_kinship: Optional[float]
-) -> hl.MatrixTable:
-    """[summary]
-
-    Parameters
-    ----------
-    mt : hl.MatrixTable
-        [description]
-    rel_file : str
-        [description]
-    max_kinship : Optional[float]
-        [description]
-
-    Returns
-    -------
-    hl.MatrixTable
-        [description]
-    """
-
-    rel = hl.import_table(
-        rel_file,
-        delimiter=" ",
-        impute=True,
-        types={"ID1": "str", "ID2": "str"},
-    )
-
-    rel = rel.filter(rel.Kinship > max_kinship, keep=True)
-
-    related_samples_to_remove = hl.maximal_independent_set(
-        i=rel.ID1,
-        j=rel.ID2,
-        keep=False,
-    ).key_by("node")
-
-    return mt.anti_join_cols(related_samples_to_remove)
-
-
 def recode_GT_to_GP(
     mt: hl.matrixtable.MatrixTable,
 ) -> hl.matrixtable.MatrixTable:
-    """[summary]
+    """Recode GT to fake GPs for export_bgen
 
     Parameters
     ----------
     mt : hl.matrixtable.MatrixTable
-        [description]
+        Input MT
 
     Returns
     -------
     hl.matrixtable.MatrixTable
-        [description]
+        MT with GP entry fields
     """
 
     GPs = hl.literal([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
@@ -351,19 +328,17 @@ def recode_GT_to_GP(
 
 
 def write_bgen(mt: hl.matrixtable.MatrixTable, output: str) -> None:
-    """[summary]
+    """Export MatrixTable as .bgen and .sample file
 
     Parameters
     ----------
     mt : hl.matrixtable.MatrixTable
-        [description]
+        Input MT
     output : str
-        [description]
+        Name for output.bgen and output.sample
     """
     mt = add_varid(mt)
 
     mt = recode_GT_to_GP(mt)
 
-    hl.export_bgen(
-        mt=mt, varid=mt.varid, rsid=mt.varid, gp=mt.GP, output=output
-    )
+    hl.export_bgen(mt=mt, varid=mt.varid, rsid=mt.varid, gp=mt.GP, output=output)

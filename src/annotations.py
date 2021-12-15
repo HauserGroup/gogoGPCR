@@ -1,5 +1,7 @@
-import hail as hl
-import subprocess
+# DEPRECATED
+
+# import hail as hl
+# import subprocess
 
 
 # def annotate_OPRM1(mt: hl.MatrixTable, anno_file: str) -> hl.MatrixTable:
