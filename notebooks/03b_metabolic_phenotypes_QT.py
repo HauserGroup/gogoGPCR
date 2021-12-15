@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.3
+#       jupytext_version: 1.13.4
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -26,6 +26,7 @@ from pyspark.conf import SparkConf
 from pyspark.sql.types import StringType
 
 from pathlib import Path
+from phenotypes import *
 
 Path("../tmp").resolve().mkdir(parents=True, exist_ok=True)
 
@@ -50,46 +51,10 @@ spark.sql("USE " + dispensed_database_name)
 dataset = dxdata.load_dataset(id=dispensed_dataset_id)
 participant = dataset["participant"]
 
-
-def get_columns_to_keep(df, threshold=200) -> list:
-    """
-    This function drops all columns which contain more null values than threshold
-    :param df: A PySpark DataFrame
-    """
-    null_counts = (
-        df.select([F.count(F.when(~F.col(c).isNull(), c)).alias(c) for c in df.columns])
-        .collect()[0]
-        .asDict()
-    )
-    to_keep = [k for k, v in null_counts.items() if v > threshold]
-    # df = df.select(*to_keep)
-
-    return to_keep
-
-
 # %%
-def new_names(s: str) -> str:
-    """
-    Fixes a column header for PHESANT use
-    """
-    s = s.replace("p", "x").replace("i", "")
+age_sex_fields = get_age_sex(participant, fields = ["31", "21022"])
 
-    if bool(re.search("_\d$", s)):
-        s += "_0"
-    else:
-        s += "_0_0"
-    return s
-
-
-# %%
-age_sex = "|".join(["31", "21022"])
-age_sex_fields = list(
-    participant.find_fields(lambda f: bool(re.match(f"^p({age_sex})$", f.name)))
-)
-
-# %%
-metabolic = "|".join(
-    [
+metabolic_fields = get_pheno_fields(participant, fields = [
         "21002",
         "50",
         "48",
@@ -102,18 +67,12 @@ metabolic = "|".join(
     ]
 )
 
-metabolic_fields = list(
-    participant.find_fields(lambda f: bool(re.match(f"^p({metabolic})\D", f.name)))
-)
+field_names = concatenate(["eid"], age_sex_fields, metabolic_fields)
 
-field_names = (
-    ["eid"]
-    + [f.name for f in age_sex_fields]
-    + [f.name for f in metabolic_fields]
-)
 df = participant.retrieve_fields(names=field_names, engine=dxdata.connect())
 
 # %%
+# drop arrays
 to_drop = [x for x in df.columns if "a1" in x]
 df = df.drop(*to_drop)
 colnames = [re.sub("_a\d", "", x) for x in df.columns]
@@ -122,6 +81,7 @@ print(colnames[:10])
 
 # %%
 df = df.toDF(*colnames)
+df = filter_to_200k(df)
 
 # %%
 df.write.csv("/tmp/phenos.tsv", sep="\t", header=True, emptyValue='NA')

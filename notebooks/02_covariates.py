@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.3
+#       jupytext_version: 1.13.4
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -58,7 +58,7 @@ field_names = [fields_for_id(id) for id in fields]
 field_names = ["eid"] + [field.name for fields in field_names for field in fields]
 
 pcs = {f"p22009_a{i}": f"PC{i}" for i in range(1, 21)}
-covs = ["FID", "IID", "AGE", "AGE2", "AGESEX", "AGE2SEX"] + list(pcs.values())
+covs = ["FID", "IID", "SEX", "AGE", "AGE2", "AGESEX", "AGE2SEX"] + list(pcs.values())
 
 # %%
 df = participant.retrieve_fields(
@@ -71,6 +71,7 @@ df = (
     df.select([F.col(c).alias(pcs.get(c, c)) for c in df.columns])
     .withColumn("FID", F.col("eid"))
     .withColumn("IID", F.col("eid"))
+    .withColumn("SEX", F.col("p22001").cast(IntegerType()))
     .withColumn("AGE", F.col("p21022").cast(IntegerType()))
     .withColumn("AGE2", (F.col("p21022") ** 2).cast(IntegerType()))
     .withColumn("AGESEX", (F.col("p21022") * F.col("p22001")).cast(IntegerType()))
@@ -100,3 +101,5 @@ subprocess.run(
     check=True,
     shell=False,
 )
+
+# %%

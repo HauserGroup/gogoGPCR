@@ -1,4 +1,3 @@
 black
-toml
 jupytext
 isort

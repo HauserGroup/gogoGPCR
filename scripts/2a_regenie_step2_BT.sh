@@ -25,12 +25,11 @@ regenie \
   --set-list ${data_file_dir}/burden/${GENE}.setlist \
   --mask-def ${data_file_dir}/burden/${GENE}.masks \
   --check-burden-files \
+  --write-mask-snplist \
   --out ${PHENOTYPE}.${TRAIT}.${GENE}.step2 \
+  --aaf-bins 0.01,0.05 \
   #--maxstep-null 1 \
   #--maxiter-null 25000 \
-  --write-samples \
-  --print-pheno \
-  --af-cc \
   --verbose
 "
 

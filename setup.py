@@ -24,7 +24,7 @@ setup(
     packages=find_packages(where="src"),
     python_requires=">=3.6,",
     install_requires=[
-        "hail==0.2.61",
+        "hail==0.2.78",
         "tomli",
         "jupyterlab",
     ],

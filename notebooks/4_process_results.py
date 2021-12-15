@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.3
+#       jupytext_version: 1.13.4
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -30,11 +30,13 @@ from matplotlib.lines import Line2D
 
 import results
 
+Path("../tmp").resolve().mkdir(parents=True, exist_ok=True)
+
 
 # %%
 # Flags
 GENE = "MC4R"
-TRAIT = "BT"
+TRAIT = "QT"
 PHENOTYPE = "metabolic"
 
 # %%
@@ -44,8 +46,8 @@ PHENOTYPE = "metabolic"
 # %%
 # Results files
 files = [
-    f"file:/mnt/project/Data/results/{PHENOTYPE}.{TRAIT}/{file}"
-    for file in os.listdir(f"/mnt/project/Data/results/{PHENOTYPE}.{TRAIT}")
+    f"file:/mnt/project/Data/results/{PHENOTYPE}.{TRAIT}.{GENE}/{file}"
+    for file in os.listdir(f"/mnt/project/Data/results/{PHENOTYPE}.{TRAIT}.{GENE}")
     if file.endswith(".regenie")
 ]
 
@@ -80,21 +82,18 @@ df_raw = pd.concat(
 )
 
 # %%
-df_raw
-
-# %%
 # Fix common fields
 df = df_raw
 df.loc[:, "GENE"] = df.ID.apply(lambda x: x.split(".")[0])
 df.loc[:, "MASK"] = df.ALLELE1.apply(lambda x: x.split(".", maxsplit=2)[0])
 df.loc[:, "AAF"] = df.ALLELE1.apply(lambda x: x.split(".", maxsplit=1)[-1])
 # df.loc[:,"MASK2"] = df.MASK + "." + df.AAF
-df.loc[:, "FILE"] = df.SOURCE.apply(
-    lambda x: x.split("/")[-1].split("\.")[0].split("_", maxsplit=4)[2:]
-)
+#df.loc[:, "FILE"] = df.SOURCE.apply(
+#    lambda x: x.split("/")[-1].split("\.")[0].split("_", maxsplit=4)[2:]
+#)
 df.loc[:, "TRAIT"] = TRAIT  # df.FILE.apply(lambda x: x[0])
-df.loc[:, "PHENO"] = df.FILE.apply(lambda x: x[-1].split(".")[0])
-df = df.drop(["ID", "ALLELE0", "ALLELE1", "EXTRA", "SOURCE", "FILE", "TEST"], axis=1)
+df.loc[:, "PHENO"] = df.SOURCE.apply(lambda x: x.split("_")[-1].split(".")[0])
+df = df.drop(["ID", "ALLELE0", "ALLELE1", "EXTRA", "SOURCE", "TEST"], axis=1)
 
 # Sanity check
 df.head()
@@ -131,10 +130,7 @@ print(len(df))
 df.head()
 
 # %%
-df.Phenotype.unique()
-
-# %%
-phenos_to_remove = ["Date I10 first reported (essential (primary) hypertension)"]
+phenos_to_remove =  []
 
 plt_df = (
     df.loc[(df.GENE == GENE)]
@@ -144,13 +140,13 @@ plt_df = (
     .reset_index()
 )
 
-pmax = 0.1
-OR_max = 20
-interesting = plt_df.groupby("Phenotype").pval.agg("min").le(pmax) & plt_df.groupby(
-    "Phenotype"
-).OR.agg("max").le(OR_max)
-interesting = list(interesting.loc[interesting].index)
-plt_df = plt_df.loc[plt_df.Phenotype.isin(interesting), :]
+#pmax = 0.1
+#OR_max = 20
+#interesting = plt_df.groupby("Phenotype").pval.agg("min").le(pmax) & plt_df.groupby(
+#    "Phenotype"
+#).OR.agg("max").le(OR_max)
+#interesting = list(interesting.loc[interesting].index)
+#plt_df = plt_df.loc[plt_df.Phenotype.isin(interesting), :]
 
 
 plt_df = plt_df.loc[~plt_df.Phenotype.astype(str).isin(phenos_to_remove), :]
@@ -208,7 +204,7 @@ def plot_BT(
         df.loc[:, "N_pos"].astype(str).str.ljust(just["N_pos"])
         + df.loc[:, "OR"].round(2).astype(str).str.ljust(5)
         + df.loc[:, "CI"].str.ljust(just["CI"])
-        + "p= "
+        + "p="
         + df.loc[:, "pval"].apply(lambda p: f"{p:.2e}").str.ljust(4)
         + " "
         + df.loc[:, "pval_stars"].str.ljust(4)
@@ -264,7 +260,7 @@ def plot_BT(
         # ax.set_xlim(0 - fudge, df.OR_up.max() + fudge)
         ax.set_xlim(xlim[0] - fudge, xlim[1] + fudge)
         # ax.set_xticks(np.arange(0, int(df.OR_up.max()) + 2, 1))
-        ax.set_xticks(np.arange(0, 13 + 2, 1))
+        ax.set_xticks(np.arange(xlim[0], xlim[1] + 1, 1))
 
         ax.set_yticklabels(temp.label, fontsize=9, fontdict={"family": "monospace"})
 
@@ -310,10 +306,10 @@ def plot_BT(
     return fig
 
 
-plot = plot_BT(plt_df, title="MC4R Binary traits")
+plot = plot_BT(plt_df, title=f"{GENE} Binary {PHENOTYPE.capitalize()} Traits", xlim = [0,10])
 
 plt.savefig(
-    f"/opt/notebooks/gogoGPCR/tmp/{GENE}_{TRAIT}_new.svg",
+    f"/opt/notebooks/gogoGPCR/tmp/{GENE}.{TRAIT}.svg",
     dpi=600,
     bbox_inches="tight",
     format="svg",
@@ -321,47 +317,139 @@ plt.savefig(
 
 
 # %%
-def make_plt_df(
-    df: pd.DataFrame,
-    phenos_to_remove,
-    trait=TRAIT,
-    gene=GENE,
-) -> pd.DataFrame:
+def plot_QT(
+    df,
+    width=4,
+    height=None,
+    phenotypes=None,
+    masks=None,
+    lw=1.3,
+    ms=10,
+    fudge=0.6,
+    xlim=[-1,1],
+    title=None,
+):
 
-    plt_df = (
-        df.loc[(df.GENE == GENE)]
-        .sort_values(by=["Phenotype", "AAF"], ascending=[True, False])
-        .groupby(["Phenotype", "MASK"])
-        .first()
-        .reset_index()
+    df = df.loc[df.TRAIT == "QT", :]
+
+    just = df.applymap(lambda x: len(str(x)) + 1).max()
+
+    df.loc[:, "label"] = (
+        df.loc[:, "N_pos"].astype(str).str.ljust(just["N_pos"])
+        + df.loc[:, "BETA"].round(2).astype(str).str.ljust(5)
+        + "± "
+        + df.loc[:, "SE"].round(2).astype(str).str.ljust(5)
+        + "p="
+        + df.loc[:, "pval"].apply(lambda p: f"{p:.2e}").str.ljust(5)
+        + " "
+        + df.loc[:, "pval_stars"].str.ljust(4)
     )
 
-    plt_df = plt_df.loc[~plt_df.Phenotype.isin(phenos_to_remove), :]
+    if phenotypes is None:
+        phenotypes = df.Phenotype.unique()
 
-    effect = {"BT": "OR", "QT": "BETA"}[TRAIT]
+    num_pheno = len(phenotypes)
+    if not height:
+        height = 2 * num_pheno
 
-    group_by_mean = pd.DataFrame(
-        {"mean": plt_df.groupby(["Phenotype"]).agg("mean")[effect]}
-    ).reset_index()
+    masks = df.MASK.unique()
+    colors = plt.cm.viridis(np.linspace(0, 1, len(masks)))
 
-    group_by_mean = group_by_mean.sort_values(by="mean", ascending=False).reset_index()
+    fig, axes = plt.subplots(nrows=num_pheno, sharex=True, figsize=(width, height))
+    legend_elements = [
+        Line2D([0], [0], color=color, marker="o", ms=ms, lw=0, label=mask)
+        for color, mask in zip(colors, masks)
+    ]
 
-    sorter = list(group_by_mean["Phenotype"])
+    for i, ax in tqdm(enumerate(axes)):
 
-    plt_df.loc[:, "Phenotype"] = plt_df.loc[:, "Phenotype"].astype("category")
-    plt_df.loc[:, "Phenotype"].cat.set_categories(sorter, inplace=True)
+        temp = df.loc[df.Phenotype.eq(phenotypes[i]), :]
+        temp = temp.loc[df.MASK.isin(masks)]
 
-    plt_df = plt_df.sort_values(
-        by=["Phenotype", "MASK"], ascending=[True, False]
-    ).reset_index(drop=True)
+        for color, mask in zip(
+            colors,
+            masks,
+        ):
+            temp1 = temp.loc[temp.MASK == mask, :]
+            #xerr = [temp1["OR_low_lim"].values, temp1["OR_up_lim"].values]
 
-    phenotypes = plt_df.Phenotype.unique()
+            ax.errorbar(
+                temp1["BETA"],
+                temp1.index,
+                alpha=0.99,
+                xerr=temp1["SE"],
+                fmt="o",
+                c=color,
+                ecolor="black",
+                ms=ms,
+                mew=0.0,
+                mec="black",
+                elinewidth=lw,
+            )
+        print(temp.label)
+        ax0 = ax.twinx()
+        ax0.yaxis.tick_left()
+        ax.yaxis.tick_right()
+        ax.set_ylim(temp.index[0] - fudge, temp.index[-1] + fudge)
+        ax.set_yticks(temp.index)
+        # ax.set_xlim(0 - fudge, df.OR_up.max() + fudge)
+        ax.set_xlim(xlim[0] - fudge, xlim[1] + fudge)
+        # ax.set_xticks(np.arange(0, int(df.OR_up.max()) + 2, 1))
+        ax.set_xticks(np.arange(xlim[0], xlim[1] + 1, 1))
 
-    return plt_df
+        ax.set_yticklabels(temp.label, fontsize=9, fontdict={"family": "monospace"})
+
+        ax.tick_params(right=False)
+        ax.spines["top"].set_alpha(0)
+        ax.spines["left"].set_alpha(0)
+        ax.spines["right"].set_alpha(0)
+        ax.spines["bottom"].set_alpha(0)
+
+        ax0.tick_params(right=False)
+        ax0.tick_params(left=False)
+        ax0.spines["top"].set_alpha(0)
+        ax0.spines["left"].set_alpha(0)
+        ax0.spines["right"].set_alpha(0)
+
+        ax0.grid(False)
+
+        # only show every 3rd yticklabel
+        labels = [
+            l if i % len(masks) == 0 else "" for i, l in enumerate(temp.Phenotype)
+        ]
+        ax0.set(yticks=temp.index, yticklabels=labels[::-1])
+
+        ax.axvline(x=0, linestyle="--", color="#4f4f4f")
+
+        ax0.spines["top"].set_alpha(0)
+        ax0.spines["left"].set_alpha(0)
+        ax0.spines["right"].set_alpha(0)
+
+        if i != len(phenotypes) - 1:
+            ax0.spines["bottom"].set_alpha(0)
+            ax.tick_params(bottom=False)
+
+        if i == len(phenotypes) - 1:
+            ax.set_xlabel("β")
+            ax.tick_params(bottom=True)
+            ax.legend(handles=legend_elements[::-1], loc="lower right")
+
+    if title:
+        fig.suptitle(title)
+    plt.subplots_adjust(right=1)
+
+    return fig
 
 
-plt_df = make_plt_df(df, phenos_to_remove=phenos_to_remove)
-plt_df.head()
+plot = plot_QT(plt_df, title=f"{GENE} Quantitative {PHENOTYPE.capitalize()} Traits", xlim = [-1,1], height = 12)
+
+
+plt.savefig(
+    f"/opt/notebooks/gogoGPCR/tmp/{GENE}.{TRAIT}.svg",
+    dpi=600,
+    bbox_inches="tight",
+    format="svg",
+)
 
 # %%
 for ax in range(0, len(phenotypes)):

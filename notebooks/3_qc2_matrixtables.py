@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.3
+#       jupytext_version: 1.13.4
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -121,8 +121,8 @@ pprint(f"Samples remaining after hard filtering samples: {mt.count_cols()} ")
 # %%
 # Sample QC
 # May need adjustment if too many samples are removed by default settings
-#MIN_MEAN_DP = 15
-#MIN_MEAN_GQ = 48.5
+MIN_MEAN_DP = 15
+MIN_MEAN_GQ = 48.5
 
 mt = sample_QC_mt(mt, MIN_CALL_RATE, MIN_MEAN_DP, MIN_MEAN_GQ)
 
@@ -134,10 +134,12 @@ mt = variant_QC_mt(mt, MIN_P_HWE, MIN_VAR_GQ)
 
 interesting = mt.filter_rows(
     (hl.is_defined(mt.labels)) & (hl.agg.any(mt.GT.is_non_ref()))
-).count_rows()
+)
+
+interesting_count = interesting.count_rows()
 
 pprint(
-    f"{mt.count_rows()} variants remaining after QC of which {interesting} are annotated"
+    f"{mt.count_rows()} variants remaining after QC of which {interesting_count} are annotated"
 )
 
 # %%
