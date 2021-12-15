@@ -61,15 +61,17 @@ first_occurences = list(
 
 first_occurence_fields = [f.name for f in first_occurences]
 
-age_sex_fields = get_age_sex(participant, fields = ["31", "21022"])
+age_sex_fields = get_age_sex(participant, fields=["31", "21022"])
 
-psych_fields = get_pheno_fields(participant, fields = [
+psych_fields = get_pheno_fields(
+    participant,
+    fields=[
         "2090",
         "2100",
         "20126",
-    ]
+    ],
 )
-    
+
 
 field_names = concatenate(["eid"], age_sex_fields, first_occurence_fields, psych_fields)
 

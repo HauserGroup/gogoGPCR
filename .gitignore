@@ -138,3 +138,6 @@ hail_logs/
 
 # archives
 *.gz
+
+# notebooks
+*.ipynb

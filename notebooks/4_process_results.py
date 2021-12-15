@@ -88,9 +88,9 @@ df.loc[:, "GENE"] = df.ID.apply(lambda x: x.split(".")[0])
 df.loc[:, "MASK"] = df.ALLELE1.apply(lambda x: x.split(".", maxsplit=2)[0])
 df.loc[:, "AAF"] = df.ALLELE1.apply(lambda x: x.split(".", maxsplit=1)[-1])
 # df.loc[:,"MASK2"] = df.MASK + "." + df.AAF
-#df.loc[:, "FILE"] = df.SOURCE.apply(
+# df.loc[:, "FILE"] = df.SOURCE.apply(
 #    lambda x: x.split("/")[-1].split("\.")[0].split("_", maxsplit=4)[2:]
-#)
+# )
 df.loc[:, "TRAIT"] = TRAIT  # df.FILE.apply(lambda x: x[0])
 df.loc[:, "PHENO"] = df.SOURCE.apply(lambda x: x.split("_")[-1].split(".")[0])
 df = df.drop(["ID", "ALLELE0", "ALLELE1", "EXTRA", "SOURCE", "TEST"], axis=1)
@@ -130,7 +130,7 @@ print(len(df))
 df.head()
 
 # %%
-phenos_to_remove =  []
+phenos_to_remove = []
 
 plt_df = (
     df.loc[(df.GENE == GENE)]
@@ -140,13 +140,13 @@ plt_df = (
     .reset_index()
 )
 
-#pmax = 0.1
-#OR_max = 20
-#interesting = plt_df.groupby("Phenotype").pval.agg("min").le(pmax) & plt_df.groupby(
+# pmax = 0.1
+# OR_max = 20
+# interesting = plt_df.groupby("Phenotype").pval.agg("min").le(pmax) & plt_df.groupby(
 #    "Phenotype"
-#).OR.agg("max").le(OR_max)
-#interesting = list(interesting.loc[interesting].index)
-#plt_df = plt_df.loc[plt_df.Phenotype.isin(interesting), :]
+# ).OR.agg("max").le(OR_max)
+# interesting = list(interesting.loc[interesting].index)
+# plt_df = plt_df.loc[plt_df.Phenotype.isin(interesting), :]
 
 
 plt_df = plt_df.loc[~plt_df.Phenotype.astype(str).isin(phenos_to_remove), :]
@@ -306,7 +306,9 @@ def plot_BT(
     return fig
 
 
-plot = plot_BT(plt_df, title=f"{GENE} Binary {PHENOTYPE.capitalize()} Traits", xlim = [0,10])
+plot = plot_BT(
+    plt_df, title=f"{GENE} Binary {PHENOTYPE.capitalize()} Traits", xlim=[0, 10]
+)
 
 plt.savefig(
     f"/opt/notebooks/gogoGPCR/tmp/{GENE}.{TRAIT}.svg",
@@ -326,7 +328,7 @@ def plot_QT(
     lw=1.3,
     ms=10,
     fudge=0.6,
-    xlim=[-1,1],
+    xlim=[-1, 1],
     title=None,
 ):
 
@@ -371,7 +373,7 @@ def plot_QT(
             masks,
         ):
             temp1 = temp.loc[temp.MASK == mask, :]
-            #xerr = [temp1["OR_low_lim"].values, temp1["OR_up_lim"].values]
+            # xerr = [temp1["OR_low_lim"].values, temp1["OR_up_lim"].values]
 
             ax.errorbar(
                 temp1["BETA"],
@@ -441,7 +443,12 @@ def plot_QT(
     return fig
 
 
-plot = plot_QT(plt_df, title=f"{GENE} Quantitative {PHENOTYPE.capitalize()} Traits", xlim = [-1,1], height = 12)
+plot = plot_QT(
+    plt_df,
+    title=f"{GENE} Quantitative {PHENOTYPE.capitalize()} Traits",
+    xlim=[-1, 1],
+    height=12,
+)
 
 
 plt.savefig(
