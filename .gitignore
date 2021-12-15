@@ -141,3 +141,6 @@ hail_logs/
 
 # notebooks
 *.ipynb
+
+# misc
+.DS_Store

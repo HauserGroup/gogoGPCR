@@ -13,7 +13,6 @@
 # ---
 
 # %%
-import dxdata
 import dxpy
 import hail as hl
 
@@ -48,7 +47,7 @@ GENE_FILE = Path(IMPORT["GENE_FILE"]).resolve().__str__()
 
 with open(GENE_FILE, "r") as file:
     genes = file.read().splitlines()
-    
+
 if NAME == "NONE":
     NAME = genes[0]
 
@@ -71,21 +70,30 @@ v, s = mt.count()
 pprint(f"{v} variants and {s} samples after reading matrixtable")
 
 # %%
-ht = hl.import_table("file:" + "/mnt/project/Data/annotations/MC4R.tsv", impute=True, quote = '"')
-ht = ht.annotate(Variants = ht.Variants.strip())
+# Bespoke annotation table of interesting variants. In this case, it contains variants
+# and Category columns
+
+ht = hl.import_table(
+    "file:" + "/mnt/project/Data/annotations/MC4R.tsv", impute=True, quote='"'
+)
+ht = ht.annotate(Variants=ht.Variants.strip())
 ht = ht.key_by("Variants")
 
 # %%
 ht.show()
 
 # %%
-mt = mt.annotate_rows(labels = ht[mt.protCons].Category)
+mt = mt.annotate_rows(labels=ht[mt.protCons].Category)
 
 # %%
+# Generate stats and summary of variants of interest
+
 stats, intr = get_stats(mt)
 stats.show(-1)
 
 # %%
+# Save QC info for variants of interest
+
 intr.export(f"/tmp/{NAME}_QC1.tsv")
 
 subprocess.run(
@@ -95,9 +103,8 @@ subprocess.run(
 )
 
 # %%
+# Checkpoint MT to database for loading into QC2 and further QC
 STAGE = "LABELLED"
 WRITE_PATH = "dnax://" + mt_database + f"/{NAME}.{STAGE}.mt"
 
-mt.write(WRITE_PATH, overwrite = True)
-
-# %%
+mt.write(WRITE_PATH, overwrite=True)

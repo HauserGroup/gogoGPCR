@@ -12,26 +12,32 @@
 #     name: python3
 # ---
 
+# %% [markdown]
+# # QC2
+# ## Samples, variant, relatedness, withdrawn, and genotyping quality filters
+# We kick quality control up a notch, see detailed info and considerations for each step.
 # %%
+# Imports
+
 import subprocess
 from datetime import datetime
-from distutils.version import LooseVersion
-from functools import partial
 from pathlib import Path
 from pprint import pprint
 
-import dxdata
 import dxpy
 import hail as hl
-import pandas as pd
 import pyspark
 import tomli
 from matrixtables import *
 from utils import get_stats
 
+# Make tmp if it doesn't exist
+
 Path("../tmp").resolve().mkdir(parents=True, exist_ok=True)
 
 # %%
+# Config file
+
 with open("../config.toml", "rb") as f:
     conf = tomli.load(f)
 
@@ -60,11 +66,11 @@ GENE_FILE = Path(IMPORT["GENE_FILE"]).resolve().__str__()
 
 with open(GENE_FILE, "r") as file:
     GENES = file.read().splitlines()
-    
+
 if NAME == "NONE":
     NAME = GENES[0]
 
-# SAMPLE        
+# SAMPLE
 MIN_CALL_RATE = conf["SAMPLE_QC"]["MIN_CALL_RATE"]
 MIN_MEAN_DP = conf["SAMPLE_QC"]["MIN_MEAN_DP"]
 MIN_MEAN_GQ = conf["SAMPLE_QC"]["MIN_MEAN_GQ"]
@@ -87,6 +93,7 @@ SETLIST_FILE = Path(TMP_DIR, f"{NAME}.setlist").resolve().__str__()
 
 # %%
 # Spark and Hail
+
 sc = pyspark.SparkContext()
 spark = pyspark.sql.SparkSession(sc)
 
@@ -94,6 +101,8 @@ mt_database = dxpy.find_one_data_object(name=DATABASE)["id"]
 hl.init(sc=sc, default_reference=REFERENCE_GENOME, log=LOG_FILE)
 
 # %%
+# Re-load MT
+
 STAGE = "LABELLED"
 READ_PATH = "dnax://" + mt_database + f"/{NAME}.{STAGE}.mt"
 
@@ -106,13 +115,17 @@ interesting = mt.filter_rows(
 pprint(f"{interesting} annotated variants found before QC")
 
 # %%
-# Withdrawn
+# Withdrawn samples
+# Remove all sampls that have withdrawn consent
+
 mt = mt.filter_cols(~mt.s.startswith("W"))
 
 pprint(f"Samples remaining after removing withdrawn participants: {mt.count_cols()} ")
 
 # %%
 # Filter samples
+# Filter out samples from 01 i.e. those related or failing miscellaneous hard filters
+
 samples_to_remove = hl.import_table("file:" + FILTER_FILE, key="eid")
 mt = mt.anti_join_cols(samples_to_remove)
 
@@ -121,8 +134,10 @@ pprint(f"Samples remaining after hard filtering samples: {mt.count_cols()} ")
 # %%
 # Sample QC
 # May need adjustment if too many samples are removed by default settings
-MIN_MEAN_DP = 15
-MIN_MEAN_GQ = 48.5
+# Filter samples for genotyping quality, call rate and depth
+
+# MIN_MEAN_DP = 15
+# MIN_MEAN_GQ = 48.5
 
 mt = sample_QC_mt(mt, MIN_CALL_RATE, MIN_MEAN_DP, MIN_MEAN_GQ)
 
@@ -130,6 +145,9 @@ pprint(f"Samples remaining after QC: {mt.count_cols()} ")
 
 # %%
 # Variant QC
+# Filter variants not in HWE or low-quality then check retention of variants of interest
+# May need tweaking if too strict
+
 mt = variant_QC_mt(mt, MIN_P_HWE, MIN_VAR_GQ)
 
 interesting = mt.filter_rows(
@@ -144,6 +162,8 @@ pprint(
 
 # %%
 # Genotype GQ
+# Also filters AB
+
 mt = genotype_filter_mt(mt, MIN_DP, MIN_GQ, True)
 
 missing = mt.aggregate_entries(hl.agg.sum(~hl.is_defined(mt.GT)))
@@ -151,6 +171,8 @@ pprint(f"{missing} missing or filtered entries after Call QC")
 
 # %%
 # Checkpoint
+# Phew, that should be a somewhat large reduction of our MT, better checkpoint
+
 stage = "QC2"
 checkpoint_file = f"/tmp/{NAME}.{stage}.cp.mt"
 
@@ -180,6 +202,7 @@ annotations.export("file:" + ANNOTATIONS_FILE, header=False)
 
 # %%
 # SETLIST
+
 position = mt.aggregate_rows(hl.agg.min(mt.locus.position))
 names = mt.varid.collect()
 names_str = ",".join(names)
@@ -190,22 +213,40 @@ with open(SETLIST_FILE, "w") as f:
     f.write(line)
 
 # %%
+# Upload
+
 bgen_file = BGEN_FILE + ".bgen"
 sample_file = BGEN_FILE + ".sample"
 
-subprocess.run(["dx", "upload", bgen_file, sample_file, ANNOTATIONS_FILE, SETLIST_FILE, "--path", "/Data/burden/"], check = True, shell = False)
+subprocess.run(
+    [
+        "dx",
+        "upload",
+        bgen_file,
+        sample_file,
+        ANNOTATIONS_FILE,
+        SETLIST_FILE,
+        "--path",
+        "/Data/burden/",
+    ],
+    check=True,
+    shell=False,
+)
 
 # %%
+# Final MT upload
+
 STAGE = "FINAL"
 WRITE_PATH = "dnax://" + mt_database + f"/{NAME}.{STAGE}.mt"
 
-mt.write(WRITE_PATH, overwrite = True)
+mt.write(WRITE_PATH, overwrite=True)
 
 # %%
+# Check how our favourite variants are doing
+
 stats, intr = get_stats(mt)
 stats.show(-1)
 
-# %%
 intr.export(f"/tmp/{NAME}_QC2.tsv")
 
 subprocess.run(
@@ -213,5 +254,3 @@ subprocess.run(
     check=True,
     shell=False,
 )
-
-# %%

@@ -14,11 +14,12 @@
 # ---
 
 # %% [markdown]
-# # Create a MatrixTable and QC the hell out of it
-# ## Import stuff and set your parameters
-# First, we import necessary libraries and configurations from config.toml. Then we initialise Spark and Hail.
+# # Initial quality control (QC1)
+# We import the WES VCF files as MatrixTables and perform QC common to all workflows
 
 # %%
+# Imports
+
 import subprocess
 from datetime import datetime
 from distutils.version import LooseVersion
@@ -26,7 +27,6 @@ from functools import partial
 from pathlib import Path
 from pprint import pprint
 
-import dxdata
 import dxpy
 import hail as hl
 import pandas as pd
@@ -39,6 +39,9 @@ Path("../tmp").resolve().mkdir(parents=True, exist_ok=True)
 
 # %% tags=["parameters"]
 # Parameters
+
+# Config file
+# As far as possible this contains all configurations
 with open("../config.toml", "rb") as f:
     conf = tomli.load(f)
 
@@ -99,19 +102,27 @@ except Exception as e:
 
 hl.init(sc=sc, default_reference=REFERENCE_GENOME, log=LOG_FILE)
 
+
+# %% [markdown]
+# ## Import a list of VCF files corresponding to genes from genes.txt.
+# Note that hl.import_gvcfs needs a list of regions to import, here we use those from the provided genes
+# See MAP_FILE for an example of necessary columns for import_mt. The one provided in here, in ../data,
+# only contains GPCR genes
 # %%
-# Import
+# Import MatrixTable
 mapping = pd.read_csv(MAP_FILE, sep="\t").set_index("HGNC", drop=False)
 
 mt = import_mt(GENES, mapping, vcf_dir=VCF_DIR, vcf_version=VCF_VERSION).key_rows_by(
     "locus", "alleles"
-)  # .checkpoint(checkpoint_file)
+)
 
 v, s = mt.count()
 pprint(f"{v} variants and {s} samples after import")
 
 # %%
 # Checkpoint
+# Hail likes checkpoints after major operations
+
 stage = "RAW"
 checkpoint_file = f"/tmp/{NAME}.{stage}.cp.mt"
 
@@ -119,6 +130,8 @@ mt = mt.checkpoint(checkpoint_file, overwrite=True)
 
 # %%
 # Downsample
+# If provided, samples can be downsampled for test purposes
+
 if DOWNSAMPLE_P is not None:
     mt = downsample_mt(mt, DOWNSAMPLE_P)
 
@@ -126,18 +139,26 @@ if DOWNSAMPLE_P is not None:
 
 # %%
 # Interval QC
+# Filter to only WES capture regions
+
 mt = interval_qc_mt(mt, "file:" + INT_FILE)
 
 pprint(f"{mt.count_rows()} variants after interval filtering")
 
 # %%
 # Split multi
+# Create MatrixTable of only biallelic sites. smart_split_multi_mt may be over-engineered
+# but should be marginally faster for large datasets
+
 mt = mt.filter_rows(mt.alleles.length() <= 6)
 mt = smart_split_multi_mt(mt)
 
 pprint(f"{mt.count_rows()} variants with not more than 6 alleles after splitting")
 
 # %%
+# Annotate variants with VEP
+# As of 104, MANE_SELECT is the canonical transcript and this function may break or may not
+
 if USE_VEP:
     mt = hl.vep(mt, "file:" + VEP_JSON)
 
@@ -154,9 +175,10 @@ if USE_VEP:
 
 
 # %%
+# Save QC'ed MT to database for loading into separate annotation notebook (e.g. 2a or 2b)
+# Can also be used straight in QC2
+
 STAGE = "QC1"
 WRITE_PATH = "dnax://" + mt_database + f"/{NAME}.{STAGE}.mt"
 
 mt.write(WRITE_PATH, overwrite=True)
-
-# %%

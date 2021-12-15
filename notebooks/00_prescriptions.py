@@ -13,6 +13,9 @@
 #     name: python3
 # ---
 
+# %% [markdown]
+# # Fetch all prescription records for patients on the schizophrenia spectrum
+
 # %%
 # IMPORTS
 import re
@@ -67,6 +70,7 @@ Path("../tmp").resolve().mkdir(parents=True, exist_ok=True)
 df = df.withColumn("issue_date", df.issue_date.cast(StringType()))
 
 # %%
+# It is not necessary to to this in Hail but here we go
 ht = hl.Table.from_spark(df, key=["eid"])
 
 # %%
@@ -84,20 +88,21 @@ ht = ht.annotate(**ids[ht.eid])
 ht.show()
 
 # %%
+# Sanity check
+
 total = ht.count()
 patients = ht.group_by("eid").aggregate(eids=hl.agg.count()).count()
 pprint(f"Total number of prescriptions: {total} from {patients} unique patients")
 
 # %%
+# Export and upload
 write_path = "/tmp/schizophrenia_prescriptions.tsv.bgz"
 ht.export(write_path)
 
-# %%
 subprocess.run(
     ["hadoop", "fs", "-get", write_path, f"..{write_path}"], check=True, shell=False
 )
 
-# %%
 subprocess.run(
     [
         "dx",
