@@ -16,18 +16,16 @@ regenie \
   --ref-first \
   --phenoFile ${data_file_dir}/phenotypes/${PHENOTYPE}.${TRAIT}.final.tsv \
   --covarFile ${data_file_dir}/phenotypes/covariates.tsv \
-  --firth --approx \
   --pred ${PHENOTYPE}.${TRAIT}.step1_pred.list \
   --anno-file ${data_file_dir}/burden/${GENE}.annotations \
   --set-list ${data_file_dir}/burden/${GENE}.setlist \
   --mask-def ${data_file_dir}/burden/${GENE}.masks \
   --check-burden-files \
   --write-mask-snplist \
+  --aaf-bins 0.01,0.05 \
   --out ${PHENOTYPE}.${TRAIT}.${GENE}.step2 \
   #--maxstep-null 2 \
   #--maxiter-null 15000 \
-  --aaf-bins 0.01,0.05 \
-  --print-pheno \
   --verbose
 "
 
