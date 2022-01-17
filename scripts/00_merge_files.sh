@@ -10,9 +10,9 @@
 # - empty dummy.file
 
 # Outputs
-# - ukb_allChrs.bed - used as input for parts C and D
-# - ukb_allChrs.bim - used as input for parts C and D
-# - ukb_allChrs.fam - used as input for parts C and D
+# - ukb_allChrs.bed - used as input for 1a/1b
+# - ukb_allChrs.bim - used as input for 1a/1b
+# - ukb_allChrs.fam - used as input for 1a/1b
 
 #cmd to run (use as input with `-icmd=$run_merge`)
 run_merge="cp /mnt/project/Bulk/Genotype\ Results/Genotype\ calls/ukb22418_c[1-9]* . ;\
