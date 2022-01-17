@@ -1,14 +1,32 @@
-authors:
-  - family-names: Madsen
-    given-names: Jakob
-    orcid: "https://orcid.org/0000-0002-2841-7284"
 cff-version: 1.2.0
-message: "If you use this software, please cite the article from preferred-citation"
-preferred-citation:
-  authors:
-    - family-names: "van der Welden"
-      given-names: "WJC"
-  title: "Molecular and in vivo phenotyping of missense variants of the human glucagon receptor"
-  type: article
-  doi: "10.1016/j.jbc.2021.101413"
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: "Sture Madsen"
+    given-names: "Mona"
+    orcid: "https://orcid.org/0000-0002-2841-7284"
+  - family-names: "Hauser"
+    given-names: "Alexander"
+    orcid: "https://orcid.org/0000-0003-1098-6419"
 title: "gogoGPCR"
+version: 0.1.0
+date-released: 2021-11-18
+url: "https://github.com/jsture/gogoGPCR"
+preferred-citation:
+  type: article
+  authors:
+    - family-names: "van der Velden"
+      given-names: "Wijnand J C"
+    - family-names: "Lindquist"
+      given-names: "Peter"
+    - family-names: "Sture Madsen"
+      given-names: "Mona"
+      orcid: "https://orcid.org/0000-0002-2841-7284"
+    - family-names: "Hauser"
+      given-names: "Alexander"
+      orcid: "https://orcid.org/0000-0003-1098-6419"
+  doi: "10.1016/j.jbc.2021.101413"
+  url: "ttps://www.sciencedirect.com/science/article/pii/S0021925821012229"
+  journal: "Journal of Biological Chemistry"
+  month: 11
+  title: "Molecular and in vivo phenotyping of missense variants of the human glucagon receptor"
+  year: 2021
