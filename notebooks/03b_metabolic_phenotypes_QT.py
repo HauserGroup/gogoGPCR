@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.4
+#       jupytext_version: 1.13.6
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -81,7 +81,6 @@ print(colnames[:10])
 
 # %%
 df = df.toDF(*colnames)
-df = filter_to_200k(df)
 
 # %%
 df.write.csv("/tmp/phenos.tsv", sep="\t", header=True, emptyValue='NA')

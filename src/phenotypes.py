@@ -1,5 +1,6 @@
 import re
 import itertools
+from warnings import warn
 
 
 def get_columns_to_keep(df, threshold=200) -> list:
@@ -114,8 +115,9 @@ def fix_colnames(df):
 def filter_to_200k(
     df,
     filter_path="/mnt/project/Data/filters/samples_in_200k_exomes.csv",
-    spark=spark,
+    spark=None,
 ):
+    warn("This function is deprecated if using 450k exomes", DeprecationWarning, stacklevel=2)
     """filter df to only samples with WES data
 
     Parameters
