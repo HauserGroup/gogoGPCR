@@ -7,8 +7,8 @@ prompt="Enter GENE and PHENOTYPE for Step 2 (GENE burden files, PHENOTYPE .tsv f
 read -p "$prompt" GENE PHENOTYPE 
 
 run_regenie_step2="
-sed -i 's|/home/dnanexus/out/out/|${data_file_dir}/step1/${PHENOTYPE}.${TRAIT}.LOCO/|' ${PHENOTYPE}.${TRAIT}.step1_pred.list &&
-sed -i 's|/home/dnanexus/out/out/|${data_file_dir}/step1/${PHENOTYPE}.${TRAIT}.LOCO/|' ${PHENOTYPE}.${TRAIT}.step1_firth.list && 
+sed -i "s|/home/dnanexus/out/out/|${data_file_dir}/step1/${PHENOTYPE}.${TRAIT}.LOCO/| ${PHENOTYPE}.${TRAIT}.step1_pred.list &&
+sed -i "s|/home/dnanexus/out/out/|${data_file_dir}/step1/${PHENOTYPE}.${TRAIT}.LOCO/|' ${PHENOTYPE}.${TRAIT}.step1_firth.list && 
 regenie \
   --step 2 \
   --bt \

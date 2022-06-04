@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.4
+#       jupytext_version: 1.13.6
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -36,7 +36,7 @@ Path("../tmp").resolve().mkdir(parents=True, exist_ok=True)
 # Flags
 
 GENE = "MC4R"
-TRAIT = "QT"
+TRAIT = "BT"
 PHENOTYPE = "metabolic"
 AAF = None
 # %%
@@ -192,3 +192,8 @@ plt.savefig(
     bbox_inches="tight",
     format="svg",
 )
+
+# %%
+plt_df.to_csv(f"/opt/notebooks/gogoGPCR/tmp/{GENE}.{TRAIT}.csv")
+
+# %%

@@ -55,7 +55,7 @@ def lookup_regions(gene: str, mapping: pd.DataFrame) -> hl.expr.LocusExpression:
 
 
 def lookup_vcfs(
-    mapping: pd.DataFrame, vcfdir: str, gene: str, version: str
+    mapping: pd.DataFrame, vcfdir: str, gene: str, version: str, field_id: int = 23148
 ) -> List[str]:
     """[summary]
 
@@ -79,7 +79,7 @@ def lookup_vcfs(
     chromosome, blocks, _, _ = get_position(gene, mapping)
 
     vcf_files = [
-        f"file://{vcfdir}/ukb23156_c{chromosome}_b{block}_{version}.vcf.gz"
+        f"file://{vcfdir}/ukb{field_id}_c{chromosome}_b{block}_{version}.vcf.gz"
         for block in blocks
     ]
 

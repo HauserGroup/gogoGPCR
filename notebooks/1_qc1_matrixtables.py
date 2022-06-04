@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.4
+#       jupytext_version: 1.13.6
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -129,6 +129,11 @@ checkpoint_file = f"/tmp/{NAME}.{stage}.cp.mt"
 mt = mt.checkpoint(checkpoint_file, overwrite=True)
 
 # %%
+NAME = "MC4R"
+stage = "RAW"
+mt = hl.read_matrix_table(f"/tmp/{NAME}.{stage}.cp.mt")
+
+# %%
 # Downsample
 # If provided, samples can be downsampled for test purposes
 
@@ -179,6 +184,8 @@ if USE_VEP:
 # Can also be used straight in QC2
 
 STAGE = "QC1"
-WRITE_PATH = "dnax://" + mt_database + f"/{NAME}.{STAGE}.mt"
+WRITE_PATH = f"/tmp/{NAME}.{STAGE}.mt"
 
 mt.write(WRITE_PATH, overwrite=True)
+
+# %%
