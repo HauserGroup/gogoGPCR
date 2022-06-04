@@ -2,9 +2,11 @@ REFERENCE_GENOME = 'GRCh38'
 NAME = "NONE"
 
 [IMPORT]
-MAPPING_FILE = "/mnt/project/data/misc/mappings_with_blocks.tsv"
-INTERVAL_FILE = "/mnt/project/data/misc/xgen_plus_spikein.b38.bed"
-VCF_DIR = "/mnt/project/Bulk/Exome sequences/Population level exome OQFE variants, pVCF format - interim 450k release"
+
+MAPPING_FILE = "/opt/notebooks/gogoGPCR/data/misc/mappings_with_blocks.tsv"
+INTERVAL_FILE = "/opt/notebooks/gogoGPCR/data/misc/xgen_plus_spikein.b38.bed"
+VCF_DIR = "/mnt/project/Bulk/Exome sequences/Population level exome OQFE variants, pVCF format - interim 450k release/"
+
 GENE_FILE = "../genes.txt"
 LOG_DIR = "../hail_logs/"
 VCF_VERSION = "v1"
@@ -14,7 +16,7 @@ DATABASE = "matrix_tables"
 [ANNOTATE]
 SNV_ONLY = true
 USE_VEP = true
-VEP_JSON = "/mnt/project/data/misc/GRCh38_VEP.json"
+VEP_JSON = "/mnt/project/Data/misc/GRCh38_VEP.json"
 MISSENSE_ONLY = true
 ADD_LABELS = true
 

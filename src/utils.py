@@ -79,7 +79,7 @@ def lookup_vcfs(
     chromosome, blocks, _, _ = get_position(gene, mapping)
 
     vcf_files = [
-        f"file://{vcfdir}/ukb{field_id}_c{chromosome}_b{block}_{version}.vcf.gz"
+        f"file://{vcfdir}/ukb23148_c{chromosome}_b{block}_{version}.vcf.gz"
         for block in blocks
     ]
 
