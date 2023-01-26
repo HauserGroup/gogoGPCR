@@ -139,8 +139,5 @@ hail_logs/
 # archives
 *.gz
 
-# notebooks
-*.ipynb
-
 # misc
 .DS_Store
