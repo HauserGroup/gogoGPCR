@@ -7,7 +7,7 @@ eval "$(ssh-agent -s)"
 ssh-add .ssh/id_ed25519
 git config --global user.email $GIT_EMAIL
 git config --global user.name $GIT_USER
-git clone git@github.com:jsture/gogoGPCR.git
+git clone git@github.com:HauserGroup/gogoGPCR.git
 cd gogoGPCR/
 pip install -e .
 
