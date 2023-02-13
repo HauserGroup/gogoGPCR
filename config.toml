@@ -5,7 +5,7 @@ NAME = "NONE"
 
 MAPPING_FILE = "/opt/notebooks/gogoGPCR/data/misc/mappings_with_blocks.tsv"
 INTERVAL_FILE = "/opt/notebooks/gogoGPCR/data/misc/xgen_plus_spikein.b38.bed"
-VCF_DIR = "/mnt/project/Bulk/Exome sequences/Population level exome OQFE variants, pVCF format - interim 450k release/"
+VCF_DIR = "/mnt/project/Bulk/Exome sequences/Population level exome OQFE variants, pVCF format - final release/"
 
 GENE_FILE = "../genes.txt"
 LOG_DIR = "../hail_logs/"
