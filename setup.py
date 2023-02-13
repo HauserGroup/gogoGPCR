@@ -40,7 +40,7 @@ setup(
     #     ],
     # },
     project_urls={
-        "Bug Reports": "https://github.com/jsture/gogoGPCR/issues",
+        "Bug Reports": "https://github.com/HauserGroup/gogoGPCR/issues",
         "DNAnexus environment": (
             "https://ukbiobank.dnanexus.com/panx/tools/workers/jupyterLab"
         ),
