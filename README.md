@@ -1,8 +1,9 @@
 # gogoGPCR
-
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 gogoGPCR is a framework for performing burden testing on UK Biobank Whole-Exome Sequencing (WES) data. This repo contains a series of notebooks for pre-processing and quality-controlling UKB VCF files, mainly with [Hail](https://hail.is), a Dockerfile for pre-processing phenotypes with [PHESANT](https://github.com/MRCIEU/PHESANT), and a series of Shell scripts for performing burden testing, with [regenie](https://rgcgithub.github.io/regenie/).
 
-Despite the name, gogoGPCR can, in principle, be run for any gene (or set hereof). 
+Despite the name, gogoGPCR can, in principle, be run for any gene (or 
+set hereof). 
 
 For information on running individual notebooks, see `notebooks/README.md`. Likewise, see `scripts/README.md` for running individual scripts.
 
