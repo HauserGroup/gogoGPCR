@@ -98,7 +98,7 @@ except Exception as e:
     mt_database = dxpy.find_one_data_object(name=DATABASE)["id"]
 
 # this breaks export_bgen for now
-# hl.init(sc=sc, default_reference=REFERENCE_GENOME, log=LOG_FILE, tmp_dir=f'dnax://{mt_database}/tmp/')
+hl.init(sc=sc, default_reference=REFERENCE_GENOME, log=LOG_FILE, tmp_dir=f'dnax://{mt_database}/tmp/')
 
 hl.init(sc=sc, default_reference=REFERENCE_GENOME, log=LOG_FILE)
 

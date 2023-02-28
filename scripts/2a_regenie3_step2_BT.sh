@@ -14,7 +14,7 @@ sed -i "s|/home/dnanexus/out/out/|${data_file_dir}/step1/${PHENOTYPE}.${TRAIT}.L
 
 mkdir -p "${PHENOTYPE}.${TRAIT}.${GENE}"
 
-./regenie \
+regenie \
   --step 2 \
   --bt \
   --bgen "${data_file_dir}/burden/${GENE}.bgen" \
@@ -22,18 +22,19 @@ mkdir -p "${PHENOTYPE}.${TRAIT}.${GENE}"
   --ref-first \
   --phenoFile "${data_file_dir}/phenotypes/${PHENOTYPE}.${TRAIT}.final.tsv" \
   --covarFile "${data_file_dir}/phenotypes/covariates.tsv" \
-  --firth --approx \
+  --firth \
   --use-null-firth "${PHENOTYPE}.${TRAIT}.step1_firth.list" \
   --pred "${PHENOTYPE}.${TRAIT}.step1_pred.list" \
   --bsize 200 \
   --anno-file "${data_file_dir}/burden/${GENE}.annotations" \
   --set-list "${data_file_dir}/burden/${GENE}.setlist" \
   --mask-def "${data_file_dir}/burden/${GENE}.masks" \
-  --aaf-bins 1 \
+  --aaf-bins 0.0195 \
   --check-burden-files \
   --write-mask-snplist \
+  --maxstep-null 2 \
+  --maxiter-null 20000 \
   --out "${PHENOTYPE}.${TRAIT}.${GENE}/${PHENOTYPE}.${TRAIT}.${GENE}.step2" \
   --vc-tests acato-full \
-  --joint acat \
-  --vc-MACthr 5 \
+  --vc-MACthr 10 \
   --verbose
