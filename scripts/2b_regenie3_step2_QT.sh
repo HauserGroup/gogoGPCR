@@ -14,7 +14,7 @@ sed -i "s|/home/dnanexus/out/out/|${data_file_dir}/step1/${PHENOTYPE}.${TRAIT}.L
 
 mkdir -p "${PHENOTYPE}.${TRAIT}.${GENE}"
 
-./regenie \
+regenie \
   --step 2 \
   --qt \
   --bgen "${data_file_dir}/burden/${GENE}.bgen" \
@@ -26,11 +26,10 @@ mkdir -p "${PHENOTYPE}.${TRAIT}.${GENE}"
   --anno-file "${data_file_dir}/burden/${GENE}.annotations" \
   --set-list "${data_file_dir}/burden/${GENE}.setlist" \
   --mask-def "${data_file_dir}/burden/${GENE}.masks" \
-  --aaf-bins 1 \
+  --aaf-bins 0.0195 \
   --check-burden-files \
   --write-mask-snplist \
   --out "${PHENOTYPE}.${TRAIT}.${GENE}/${PHENOTYPE}.${TRAIT}.${GENE}.step2" \
   --vc-tests acato-full \
-  --joint nnls \
-  --vc-MACthr 5 \
+  --vc-MACthr 10 \
   --verbose
