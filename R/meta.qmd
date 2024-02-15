@@ -1,0 +1,531 @@
+```{r libraries, include=FALSE}
+library(tidyverse)
+library(readxl)
+library(brms)
+library(RColorBrewer)
+library(patchwork)
+
+set.seed(42)
+options(mc.cores = 8)
+```
+
+
+```{r data}
+files <- fs::dir_ls(path = "data/GIPR", glob = "*.regenie")
+
+df <- read_delim(files, id = "path") |> 
+    mutate(pheno = str_extract(path, "data/GIPR/metabolic.QT.GIPR.step2.([a-z]*).regenie", group = 1), .keep = "unused")
+
+df$QVAL <- p.adjust(10^-df$LOG10P, method = "fdr")
+ukb <- read_excel(here::here("data/GIPR/GIPR/Supplementary Table 5 - UKB variants.xlsx"), sheet = 1, skip = 3, na = "") |> 
+    rename(protCons = `Protein Consequence`, VEP = `VEP consequence`, AC = `Allele count [Ref, Alt]`, AF = `Allele frequency [Ref, Alt]`)
+
+inv <- read_excel(here::here("data/GIPR/GIPR/Supplementary Table 2 - In vitro data overview.xlsx"),
+sheet = 1, skip = 2, na = "NA") |> 
+    transmute(
+        protCons = `GIPR Variants`,
+        cAMP = replace_na(`cAMP (Efficacy of 100 pM)`, 0) / 100,
+        cAMP_SE = replace_na(`SEM (Efficacy of 100pM)`, 1) / 100,
+        Barr = replace_na(`Arrestin (Emax)`, 0) / 100,
+        Barr_SE = replace_na(`SEM (Arrestin Emax)`, 1) / 100
+     ) |> 
+    full_join(ukb, by = "protCons") |> 
+    mutate(
+        ID = str_c(Locus, Ref, Alt, sep = ":")
+    ) |> 
+    full_join(df, by = "ID") |> 
+    select(
+        protCons,
+        pheno,
+        cAMP,
+        cAMP_SE,
+        Barr,
+        Barr_SE,
+        BETA,
+        SE,
+    ) |> 
+    filter(if_any(-any_of(c("protCons", "pheno")), ~ !is.na(.))) |> 
+    filter(str_detect(protCons, "\\*|fs|X", negate = TRUE))
+
+inv |> 
+    filter(!is.na(BETA)) |>
+    pull(protCons) |>
+    n_distinct()
+```
+
+
+```{r bmi}
+df1 <- inv |> 
+    filter(is.na(pheno) | pheno == "bmi")
+
+f1 <- bf(BETA | mi(SE) ~ mi(cAMP) * mi(Barr),
+    family = gaussian()) +
+    bf(cAMP | mi(cAMP_SE) ~ 1) +
+    bf(Barr | mi(Barr_SE) ~ 1) +
+    set_rescor(FALSE) 
+
+fit1 <- brm(
+    f1,
+    data = df1,
+    prior = c(
+        set_prior("normal(0, 1)", class = "b", resp = "BETA"),
+        set_prior("normal(0, 1)", class = "Intercept", resp = "BETA"),
+        set_prior("normal(0, 1)", class = "sigma", resp = "BETA"),
+        set_prior("normal(0, 1)", class = "Intercept", resp = "Barr"),
+        set_prior("normal(0, 1)", class = "Intercept", resp = "cAMP"),
+        set_prior("normal(0, 1)", class = "sigma", resp = "Barr"),
+        set_prior("normal(0, 1)", class = "sigma", resp = "cAMP")
+        ),
+    file = "fits/GIPR/bmi",
+    file_refit = "never",
+    chains = 4,
+    cores = 4,
+    iter = 20000,
+    seed = 2023,
+    control = list(adapt_delta = 0.99, max_treedepth = 15),
+    save_pars = save_pars(all = TRUE),
+    init = "0",
+)
+
+
+```
+
+```{r hip}
+df2 <- inv |> 
+    filter(is.na(pheno) | pheno == "hip")
+
+
+f2 <- bf(BETA | mi(SE) ~ mi(cAMP) * mi(Barr),
+    family = gaussian()) +
+    bf(cAMP | mi(cAMP_SE) ~ 1) +
+    bf(Barr | mi(Barr_SE) ~ 1) +
+    set_rescor(FALSE)
+
+fit2 <- brm(
+    f2,
+    data = df2,
+    prior = c(
+        set_prior("normal(0, 1)", class = "b", resp = "BETA"),
+        set_prior("normal(0, 1)", class = "Intercept", resp = "BETA"),
+        set_prior("normal(0, 1)", class = "sigma", resp = "BETA"),
+        set_prior("normal(0, 1)", class = "Intercept", resp = "Barr"),
+        set_prior("normal(0, 1)", class = "Intercept", resp = "cAMP"),
+        set_prior("normal(0, 1)", class = "sigma", resp = "Barr"),
+        set_prior("normal(0, 1)", class = "sigma", resp = "cAMP")
+        ),
+    file = "fits/GIPR/hip",
+    file_refit = "never",
+    chains = 4,
+    cores = 4,
+    iter = 20000,
+    seed = 2023,
+    control = list(adapt_delta = 0.99, max_treedepth = 15),
+    save_pars = save_pars(all = TRUE),
+    init = "0",
+)
+
+conditional_effects(fit2, "Barr:cAMP", ndraws = 300, spaghetti = FALSE,
+    resp = "BETA", rug = TRUE, resolution = 1000, surface = FALSE,
+    # int_conditions = list(cAMP = c(0, 0.5, 1.5)),
+    plot = TRUE) 
+
+```
+
+```{r sys}
+df3 <- inv |> 
+    filter(is.na(pheno) | pheno == "systolic")
+
+
+f3 <- bf(BETA | mi(SE) ~ mi(cAMP) * mi(Barr),
+    family = gaussian()) +
+    bf(cAMP | mi(cAMP_SE) ~ 1) +
+    bf(Barr | mi(Barr_SE) ~ 1) +
+    set_rescor(FALSE)
+
+fit3 <- brm(
+    f3,
+    data = df3,
+    prior = c(
+        set_prior("normal(0, 1)", class = "b", resp = "BETA"),
+        set_prior("normal(0, 1)", class = "Intercept", resp = "BETA"),
+        set_prior("normal(0, 1)", class = "sigma", resp = "BETA"),
+        set_prior("normal(0, 1)", class = "Intercept", resp = "Barr"),
+        set_prior("normal(0, 1)", class = "Intercept", resp = "cAMP"),
+        set_prior("normal(0, 1)", class = "sigma", resp = "Barr"),
+        set_prior("normal(0, 1)", class = "sigma", resp = "cAMP")
+        ),
+    file = "fits/GIPR/systolic",
+    file_refit = "never",
+    chains = 4,
+    cores = 4,
+    iter = 30000,
+    seed = 2024,
+    control = list(adapt_delta = 0.99, max_treedepth = 15),
+    save_pars = save_pars(all = TRUE),
+    init = "0",
+)
+
+conditional_effects(fit3, "Barr", ndraws = 300, spaghetti = FALSE,
+    resp = "BETA", rug = TRUE, resolution = 1000, surface = FALSE,
+    # int_conditions = list(cAMP = c(0, 0.5, 1.5)),
+    plot = TRUE) 
+
+```
+
+```{r dia}
+df4 <- inv |> 
+    filter(is.na(pheno) | pheno == "diastolic")
+
+
+f4 <- bf(BETA | mi(SE) ~ mi(cAMP) * mi(Barr),
+    family = gaussian()) +
+    bf(cAMP | mi(cAMP_SE) ~ 1) +
+    bf(Barr | mi(Barr_SE) ~ 1) +
+    set_rescor(FALSE)
+
+fit4 <- brm(
+    f4,
+    data = df4,
+    prior = c(
+        set_prior("normal(0, 1)", class = "b", resp = "BETA"),
+        set_prior("normal(0, 1)", class = "Intercept", resp = "BETA"),
+        set_prior("normal(0, 1)", class = "sigma", resp = "BETA"),
+        set_prior("normal(0, 1)", class = "Intercept", resp = "Barr"),
+        set_prior("normal(0, 1)", class = "Intercept", resp = "cAMP"),
+        set_prior("normal(0, 1)", class = "sigma", resp = "Barr"),
+        set_prior("normal(0, 1)", class = "sigma", resp = "cAMP")
+        ),
+    file = "fits/GIPR/diastolic",
+    file_refit = "never",
+    chains = 4,
+    cores = 4,
+    iter = 30000,
+    seed = 2024,
+    control = list(adapt_delta = 0.99, max_treedepth = 15),
+    save_pars = save_pars(all = TRUE),
+    init = "0",
+)
+
+```
+
+```{r}
+
+fix_conditional_effects <- function(fit) {
+    df1 <- conditional_effects(fit, "cAMP", ndraws = 8000,
+        resp = "BETA", resolution = 1000, int_conditions = list(Barr = c(1)),
+        plot = FALSE)[[1]] |> 
+        as_tibble() |> 
+        rename(
+            x = cAMP,
+            y = estimate__
+        ) |> 
+        mutate(
+            pathway = "cAMP"
+        )
+
+    df2 <- conditional_effects(fit, "Barr", ndraws = 8000, resp = "BETA",  resolution = 1000, int_conditions = list(cAMP = c(1)),
+        plot = FALSE) [[1]] |>
+        as_tibble() |>
+        rename(
+            x = Barr,
+            y = estimate__
+        ) |> 
+        mutate(
+            pathway = "Barr"
+        ) 
+
+    return(bind_rows(df1, df2))
+
+
+}
+
+fix_point_df <- function(df) {
+    df1 <- df |>
+        filter(!is.na(BETA)) |>
+        pivot_longer(c(cAMP, Barr), names_to = "pathway", values_to = "x") |>
+        rename(y = BETA)
+
+    df2 <- df1 |>
+        select(protCons, cAMP_SE, Barr_SE) |>
+        pivot_longer(c(cAMP_SE, Barr_SE), names_to = "pathway", values_to = "SE_2") |>
+        mutate(
+            pathway = str_remove(pathway, "_SE")
+        ) |>
+        distinct() 
+
+        return(df2|>
+        right_join(df1, by = c("protCons", "pathway")))
+}
+
+make_plot <- function(df1, df2, ylabel, xlabel) {
+    # " β"
+    p <- ggplot(df1, aes(x = x, y = y, fill = pathway)) +
+        geom_hline(yintercept = 0, linetype = "dashed", color = "darkgrey") +
+        geom_vline(xintercept = 1, linetype = "dashed", color = "darkgrey") +
+        geom_pointrange(data = df2, aes(x = x, y = y, color = pathway, ymin = y - SE, ymax = y + SE), linewidth = 0.3, alpha = 0.5) +
+        geom_ribbon(aes(ymin = lower__, ymax = upper__), alpha = 0.2) +
+        geom_line(aes(color = pathway), linewidth = 2) +
+        theme_bw() +
+        coord_cartesian(ylim = c(-2, 2)) +
+        scale_fill_brewer(palette = "Set1", direction = -1) +
+        scale_color_brewer(palette = "Set1", direction = -1) +
+        ylab(ylabel) +
+        xlab(xlabel) +
+        labs(fill = "Pathway", color = "Pathway") 
+
+    return(p)
+}
+
+
+```
+```{r bmi_plot}
+
+bmi <- fix_conditional_effects(fit1) 
+bmi2 <- fix_point_df(df1)
+
+p1 <- make_plot(bmi, bmi2, "BMI Effect Size (β, 95% CI)", "Response ratio to WT")
+ggsave("figures/bmi.svg", p1, width = 10, height = 10)
+```
+
+```{r hip_plot}
+
+hip <- fix_conditional_effects(fit2)
+hip2 <- fix_point_df(df2)
+p2 <- make_plot(hip, hip2, "Hip Circumference Effect Size (β, 95% CI)", "Response ratio to WT")
+ggsave("figures/hip.svg", p2, width = 10, height = 10)
+```
+
+```{r systolic_plot}
+
+syst <- fix_conditional_effects(fit3)
+syst2 <- fix_point_df(df3)
+p3 <- make_plot(syst, syst2, "Systolic Blood Pressure Effect Size (β, 95% CI)", "Response ratio to WT")
+ggsave("figures/systolic.svg", p3, width = 10, height = 10)
+```
+
+
+```{r diastolic_plot}
+
+dia <- fix_conditional_effects(fit4)
+dia2 <- fix_point_df(df4)
+p4 <- make_plot(dia, dia2, "Diastolic Blood Pressure Effect Size (β, 95% CI)", "Response ratio to WT")
+ggsave("figures/diastolic.svg", p4, width = 10, height = 10)
+```
+
+```{r all_plots}
+
+p5 <- p1 + p2 + p3+ p4 + plot_layout(guides = "collect")
+ggsave("figures/all.svg", p5, width = 21, height = 10)
+```
+
+```{r all_plots}
+
+
+
+```
+
+```{r hip_plot}
+
+hip1 <- conditional_effects(fit2, "cAMP", ndraws = 10000,
+    resp = "BETA", resolution = 1000, int_conditions = list(Barr = c(1)),
+    plot = FALSE)[[1]] |> 
+    as_tibble() |> 
+    rename(
+        x = cAMP,
+        y = estimate__
+    ) |> 
+    mutate(
+        pathway = "cAMP"
+    )
+
+hip2 <- conditional_effects(fit2, "Barr", ndraws = 10000, resp = "BETA",  resolution = 1000, int_conditions = list(cAMP = c(1)),
+    plot = FALSE) [[1]] |>
+    as_tibble() |>
+    rename(
+        x = Barr,
+        y = estimate__
+    ) |> 
+    mutate(
+        pathway = "Barr"
+    ) |> 
+    bind_rows(hip1)
+
+df_hip <- df2 |>
+    filter(!is.na(BETA)) |>
+    pivot_longer(c(cAMP, Barr), names_to = "pathway", values_to = "x") |>
+    rename(y = BETA)
+
+p2 <- ggplot(hip2, aes(x = x, y = y, fill = pathway)) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "darkgrey") +
+    geom_vline(xintercept = 1, linetype = "dashed", color = "darkgrey") +
+    geom_line(aes(color = pathway)) +
+    geom_ribbon(aes(ymin = lower__, ymax = upper__), alpha = 0.2) +
+    geom_point(data = df_hip, aes(x = x, y = y, color = pathway)) +
+    ylim(-2,2) +
+    theme_bw() +
+    scale_fill_brewer(palette = "Set1", direction = -1) +
+    scale_color_brewer(palette = "Set1", direction = -1) +
+    ylab("Hip Circumference Effect Size (β, 95% CI)") +
+    xlab("") +
+    labs(fill = "Pathway", color = "Pathway") +
+    ggtitle("Hip Circumference effects")
+p2
+```
+
+```{r systolic_plot}
+syst1 <- conditional_effects(fit3, "cAMP", ndraws = 10000,
+    resp = "BETA", resolution = 1000, int_conditions = list(Barr = c(1)),
+    plot = FALSE)[[1]] |> 
+    as_tibble() |> 
+    rename(
+        x = cAMP,
+        y = estimate__
+    ) |> 
+    mutate(
+        pathway = "cAMP"
+    )
+
+syst2 <- conditional_effects(fit3, "Barr", ndraws = 10000, resp = "BETA",  resolution = 1000, int_conditions = list(cAMP = c(1)),
+    plot = FALSE) [[1]] |>
+    as_tibble() |>
+    rename(
+        x = Barr,
+        y = estimate__
+    ) |> 
+    mutate(
+        pathway = "Barr"
+    ) |> 
+    bind_rows(syst1)
+
+p3 <- ggplot(syst2, aes(x = x, y = y, fill = pathway)) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "darkgrey") +
+    geom_vline(xintercept = 1, linetype = "dashed", color = "darkgrey") +
+    geom_line(aes(color = pathway)) +
+    geom_ribbon(aes(ymin = lower__, ymax = upper__), alpha = 0.2) +
+    theme_bw() +
+    scale_fill_brewer(palette = "Set1", direction = -1) +
+    scale_color_brewer(palette = "Set1", direction = -1) +
+    ylab("Systolic Blood Pressure Effect Size (β, 95% CI)") +
+    xlab("Response ratio to WT") +
+    labs(fill = "Pathway", color = "Pathway") +
+    ggtitle("Systolic effects")
+
+```
+
+```{r diastolic_plot}
+
+dia1 <- conditional_effects(fit4, "cAMP", ndraws = 10000,
+    resp = "BETA", resolution = 1000, int_conditions = list(Barr = c(1)),
+    plot = FALSE)[[1]] |> 
+    as_tibble() |> 
+    rename(
+        x = cAMP,
+        y = estimate__
+    ) |> 
+    mutate(
+        pathway = "cAMP"
+    )
+
+dia2 <- conditional_effects(fit4, "Barr", ndraws = 10000, resp = "BETA",  resolution = 1000, int_conditions = list(cAMP = c(1)),
+    plot = FALSE) [[1]] |>
+    as_tibble() |>
+    rename(
+        x = Barr,
+        y = estimate__
+    ) |> 
+    mutate(
+        pathway = "Barr"
+    ) |> 
+    bind_rows(dia1)
+
+p4 <- ggplot(dia2, aes(x = x, y = y, fill = pathway)) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "darkgrey") +
+    geom_vline(xintercept = 1, linetype = "dashed", color = "darkgrey") +
+    geom_line(aes(color = pathway)) +
+    geom_ribbon(aes(ymin = lower__, ymax = upper__), alpha = 0.2) +
+    theme_bw() +
+    scale_fill_brewer(palette = "Set1", direction = -1) +
+    scale_color_brewer(palette = "Set1", direction = -1) +
+    ylab("Diastolic Blood Pressure Effect Size (β, 95% CI)") +
+    xlab("Response ratio to WT") +
+    labs(fill = "Pathway", color = "Pathway") +
+    ggtitle("Diastolic effects")
+```
+
+```{r all_plots}
+p1 + p2 + p3+ p4 + plot_layout(guides = "collect") + plot_annotation(title = "Meta-analysis of cAMP and Barr effects on BMI and blood pressure", subtitle = "Effect sizes based on single variant estimates")
+```
+
+```{r}
+```
+
+```{r}
+
+
+
+```
+
+
+```{r barr_int_plot}
+
+quantiles_cAmp <- quantile(df1$cAMP, probs = c(0, 0.5, 1), na.rm = TRUE)#, names = TRUE, type = 7, ...)
+
+bmi_int_barr <- conditional_effects(fit1, "Barr:cAMP", ndraws = 10000,
+    resp = "BETA", resolution = 1000,
+    int_conditions = list(cAMP = c(0, 0.5, 1)),#list(cAMP = quantiles_cAmp),#
+    plot = FALSE)[[1]] |>
+    as_tibble() |>
+    mutate(
+        x = Barr,
+        y = estimate__,
+        cAMP = as.factor(cAMP),
+        .keep = "unused"
+    )
+
+quantiles_barr <- quantile(df1$Barr, probs = c(0.1, 0.5, 0.9), na.rm = TRUE)#, names = TRUE, type = 7, ...)
+
+bmi_int_camp <- conditional_effects(fit1, "Barr:cAMP", ndraws = 10000,
+    resp = "BETA", resolution = 1000,
+    int_conditions = list(Barr = quantiles_barr),#list(Barr = c(0, 0.5, 1)),#list(cAMP = quantiles_cAmp),#
+    plot = FALSE)[[1]] |>
+    as_tibble() |>
+    mutate(
+        x = cAMP,
+        y = estimate__,
+        Barr = as.factor(Barr),
+        .keep = "unused"
+    )
+
+ggplot(bmi_int_barr, aes(x = x, y = y, fill = cAMP)) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "darkgrey") +
+    geom_vline(xintercept = 1, linetype = "dashed", color = "darkgrey") +
+    geom_line(aes(color = cAMP)) +
+    geom_ribbon(aes(ymin = lower__, ymax = upper__), alpha = 0.3) +
+    theme_bw() +
+    scale_fill_brewer(palette = "Set2", direction = 1) +
+    scale_color_brewer(palette = "Set2", direction = 1) +
+    ylab("BMI Effect Size (β, 95% CI)") +
+    xlab("Response ratio to WT") +
+    labs(color = "cAMP") +
+    ggtitle("B-arrestin BMI effect interaction at three levels of cAMP")
+
+ggplot(bmi_int_camp, aes(x = x, y = y, fill = Barr)) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "darkgrey") +
+    geom_vline(xintercept = 1, linetype = "dashed", color = "darkgrey") +
+    geom_line(aes(color = Barr)) +
+    geom_ribbon(aes(ymin = lower__, ymax = upper__), alpha = 0.3) +
+    theme_bw() +
+    scale_fill_brewer(palette = "Set2", direction = 1) +
+    scale_color_brewer(palette = "Set2", direction = 1) +
+    ylab("BMI Effect Size (β, 95% CI)") +
+    xlab("Response ratio to WT") +
+    labs(color = "B-arrestin") +
+    ggtitle("cAMP BMI effect interaction at three levels of B-arrestin")
+
+```
+
+```{r}
+
+
+
+```
